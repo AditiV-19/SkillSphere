@@ -1,5 +1,5 @@
 import {User} from '../models/user.model.js'
-
+import jwt from 'jsonwebtoken'
 
 // Register
 export const registerUser = async(req, res) =>{
@@ -57,12 +57,22 @@ export const loginUser = async(req, res) => {
             message: "Invalid credentials"
         })
 
+        const token = jwt.sign(
+            {   id: user._id,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
+
         res.status(200).json({
-            message: 'User Logged in successfully',
+            message: 'Login successfully',
+            token,
             user: {
                 id: user._id,
                 email: user.email,
-                username: user.username
+                username: user.username,
+                role: user.role
             }
         })
 
@@ -75,20 +85,7 @@ export const loginUser = async(req, res) => {
 // Logout
 
 export const logoutUser = async(req, res) => {
-    try {
-        const { email } = req.body
-
-        // check if the user exists
-        const user = await User.findOne({email: email.toLowerCase()});
-        if(!user){
-            return res.status(400).json({ message: 'User not found' })
-        }
-
-        res.status(200).json({
+    res.status(200).json({
             message: 'Logout successfully',
-        })
-
-    } catch (error) {
-        res.status(500).json({message: 'Internal Server Error', error: error.message})
-    }
+    })
 }
