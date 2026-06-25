@@ -1,0 +1,28 @@
+{
+  "name": "skillsphere",
+  "version": "1.0.0",
+  "description": "a project for internship",
+  "homepage": "https://github.com/AditiV-19/SkillSphere#readme",
+  "bugs": {
+    "url": "https://github.com/AditiV-19/SkillSphere/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AditiV-19/SkillSphere.git"
+  },
+  "license": "ISC",
+  "author": "Aditi",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/src/index.js",
+    "dev": "nodemon backend/src/index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.7.2",
+    "nodemon": "^3.1.14"
+  }
+}
