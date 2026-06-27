@@ -19,8 +19,14 @@ export const registerUser = async(req, res) =>{
             return res.status(400).json({ message: "User already exists!" })
         }
 
-        const verificationToken = crypto.randomBytes(32).toString("hex")
+        if (password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters."
+            });
+        }
 
+        const verificationToken = crypto.randomBytes(32).toString("hex")
+        
         const hashedToken = crypto.createHash("sha256").update(verificationToken).digest("hex")
 
         // create user
@@ -61,9 +67,13 @@ export const loginUser = async(req, res) => {
 
         // compare password
         const isMatch = await user.comparePassword(password);
-        console.log(isMatch)
         if(!isMatch) return res.status(400).json({
             message: "Invalid credentials"
+        })
+
+        // check if verification token true
+        if(!user.isVerified) return res.status(400).json({
+            message: "Please verify your email before logging in."
         })
 
         const token = jwt.sign(
@@ -81,7 +91,7 @@ export const loginUser = async(req, res) => {
                 id: user._id,
                 email: user.email,
                 username: user.username,
-                role: user.role
+                role: user.role,
             }
         })
 
@@ -97,4 +107,43 @@ export const logoutUser = async(req, res) => {
     res.status(200).json({
             message: 'Logout successfully',
     })
+}
+
+
+// Verify Email
+
+export const verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+        const user = await User.findOne({
+            verificationToken: hashedToken,
+            verificationTokenExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                message: "Invalid or expired verification link"
+            });
+        }
+
+        user.isVerified = true;
+
+        user.verificationToken = "";
+
+        user.verificationTokenExpires = undefined;
+
+        await user.save();
+
+        return res.status(200).json({
+            message: "Email verified successfully!"
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Internal Server Error",
+            error: error.message
+        });
+    }
 }

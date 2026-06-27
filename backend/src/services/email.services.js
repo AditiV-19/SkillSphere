@@ -2,7 +2,7 @@ import { transporter } from "../config/mail.js";
 
 export const sendVerificationEmail = async (email, verificationToken) => {
 
-    const verificationURL = `${process.env.CLIENT_URL}/verify/${verificationToken}`
+    const verificationURL = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`
 
     await transporter.sendMail({
 
