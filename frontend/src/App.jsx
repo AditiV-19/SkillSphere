@@ -7,6 +7,7 @@ import Register from "./pages/Register"
 import Dashboard from  "./pages/Dashboard"
 import Profile from "./pages/Profile"
 import VerifyEmail from "./pages/VerifyEmail"
+import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App(){
 
@@ -27,11 +28,18 @@ export default function App(){
             />
             <Route
                 path="/dashboard"
-                element={<Dashboard/>}
+                element={
+                <ProtectedRoute>
+                    <Dashboard/>
+                </ProtectedRoute>
+                }
             />
             <Route
                 path="/profile"
-                element={<Profile/>}
+                element={
+                <ProtectedRoute>
+                    <Profile/>
+                </ProtectedRoute>}
             />
             <Route
                 path="/verify-email/:token"
