@@ -31,7 +31,20 @@ const userSchema = new Schema(
             type: String,
             required: true,
             enum: ['client', 'freelancer', 'admin'],
-        }
+        },
+        isVerified: {
+            type: Boolean,
+            default: false
+        },
+
+        verificationToken: {
+            type: String,
+            default: ""
+        },
+
+        verificationTokenExpires: {
+            type: Date
+        },
     },
     {
         timestamps: true

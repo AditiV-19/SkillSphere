@@ -1,5 +1,7 @@
 import {User} from '../models/user.model.js'
 import jwt from 'jsonwebtoken'
+import { sendVerificationEmail } from '../services/email.services.js';
+import crypto from 'crypto'
 
 // Register
 export const registerUser = async(req, res) =>{
@@ -17,15 +19,22 @@ export const registerUser = async(req, res) =>{
             return res.status(400).json({ message: "User already exists!" })
         }
 
-        // create user
+        const verificationToken = crypto.randomBytes(32).toString("hex")
 
+        const hashedToken = crypto.createHash("sha256").update(verificationToken).digest("hex")
+
+        // create user
         const user = await User.create({
             username,
             password,
             email: email.toLowerCase(),
             role,
-            loggedIn: false,
+            isVerified: false,
+            verificationToken: hashedToken,
+            verificationTokenExpires: Date.now() + 1000 * 60 * 10
         });
+
+        await(sendVerificationEmail(user.email, verificationToken))
 
         res.status(201).json({
             message: 'User registered successfully!',
