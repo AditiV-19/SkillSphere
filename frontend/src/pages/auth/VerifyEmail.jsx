@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import API from "../services/api.js";
+import API from "../../services/api";
 import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 
 export default function VerifyEmail(){

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { loginUser } from "../services/api";
+import { loginUser } from "../../services/api";
 
 export default function Login() {
 
@@ -23,6 +23,7 @@ const handleLogin = async (e) => {
             email,
             password
         });
+        const user = response.data.user;
 
         localStorage.setItem(
             "token",
@@ -31,7 +32,7 @@ const handleLogin = async (e) => {
 
         localStorage.setItem(
             "user",
-            JSON.stringify(response.data.user)
+            JSON.stringify(user)
         );
 
         setEmail("");
@@ -39,7 +40,20 @@ const handleLogin = async (e) => {
 
         alert(response.data.message);
 
-        navigate("/dashboard");
+        switch (user.role) {
+
+    case "admin":
+        navigate("/admin/dashboard");
+        break;
+
+    case "client":
+        navigate("/client/dashboard");
+        break;
+
+    default:
+        navigate("/freelancer/dashboard");
+
+}
 
     } catch (error) {
 

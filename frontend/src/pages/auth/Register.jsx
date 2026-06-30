@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { registerUser } from "../services/api";
+import { registerUser } from "../../services/api";
 
 export default function Register() {
   const [username, setUsername] = useState("");
