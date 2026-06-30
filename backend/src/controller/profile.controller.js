@@ -59,7 +59,7 @@ export const getProfile = async (req, res) => {
 
         const profile = await UserProfile.findOne({
             user: req.user.id
-        }).populate("user email role isVerified");
+        }).populate("user", "username email role isVerified");
 
         if (!profile) {
 
@@ -103,7 +103,7 @@ export const updateProfile = async (req, res) => {
                 runValidators: true
             }
 
-        ).populate("user email role isVerified");
+        ).populate("user", "username email role isVerified");
 
         if (!profile) {
 
