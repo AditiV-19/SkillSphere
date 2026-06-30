@@ -1,6 +1,6 @@
 import { FaEnvelope, FaMapMarkerAlt, FaUserEdit } from "react-icons/fa";
 
-export default function ProfileHeader({user, isEditing, setIsEditing}) {
+export default function ProfileHeader({isEditing, setIsEditing, profile}) {
 
     return (
 
@@ -9,7 +9,7 @@ export default function ProfileHeader({user, isEditing, setIsEditing}) {
             <div className="flex flex-col lg:flex-row lg:items-center gap-8">
 
                 <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || "User")}&background=2563eb&color=fff`}
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.user?.username || "User")}&background=2563eb&color=fff`}
                     alt="Profile"
                     className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
                 />
@@ -17,11 +17,15 @@ export default function ProfileHeader({user, isEditing, setIsEditing}) {
                 <div className="flex-1">
 
                     <h1 className="text-3xl font-bold">
-                        {user?.username}
+                        {
+                        profile.firstName && profile.lastName
+                        ? `${profile.firstName} ${profile.lastName}`
+                        : profile.user.username
+                        }
                     </h1>
 
                     <p className="text-blue-600 font-semibold capitalize mt-1">
-                        {user?.role}
+                        {profile.user?.role}
                     </p>
 
                     <div className="flex flex-wrap gap-6 mt-5 text-gray-500">
@@ -30,7 +34,7 @@ export default function ProfileHeader({user, isEditing, setIsEditing}) {
 
                             <FaEnvelope />
 
-                            <span>{user?.email}</span>
+                            <span>{profile.user?.email}</span>
 
                         </div>
 

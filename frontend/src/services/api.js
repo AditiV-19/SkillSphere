@@ -29,3 +29,10 @@ export const verifyEmail = (token) => {
     return API.get(`/verify-email/${token}`)
 }
 
+export const getProfile = () => {
+    return API.get("/users/profile");
+};
+
+export const updateProfile = (profileData) => {
+    return API.put("/users/profile", profileData);
+};

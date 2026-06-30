@@ -1,4 +1,4 @@
-export default function AboutCard({profileData, setProfileData, isEditing}) {
+export default function AboutCard({setProfile, isEditing, profile}) {
 
     return (
 
@@ -19,13 +19,13 @@ isEditing ?
 
 className="w-full border rounded-xl p-4"
 
-value={profileData.about}
+value={profile.about}
 
 onChange={(e)=>
 
-setProfileData({
+setProfile({
 
-...profileData,
+...profile,
 
 about:e.target.value
 
@@ -43,7 +43,7 @@ about:e.target.value
 
 <p>
 
-{profileData.about ||
+{profile.about ||
 
 "Tell clients about yourself."}
 

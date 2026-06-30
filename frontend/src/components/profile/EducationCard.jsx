@@ -1,16 +1,6 @@
 import { FaGraduationCap } from "react-icons/fa";
 
-export default function EducationCard() {
-
-    const education = [
-        {
-            degree: "Bachelor of Technology",
-            institute: "Your College Name",
-            duration: "2024 - 2028",
-            description:
-                "Computer Science and Engineering"
-        }
-    ];
+export default function EducationCard({setProfile, isEditing, profile}) {
 
     return (
 
@@ -30,7 +20,8 @@ export default function EducationCard() {
 
             <div className="space-y-6">
 
-                {education.map((item, index) => (
+                { profile.education.length>0 ? (
+                    profile.education.map((item, index) => (
 
                     <div
                         key={index}
@@ -63,7 +54,10 @@ export default function EducationCard() {
 
                     </div>
 
-                ))}
+                ))
+            ): (
+                <span className="text-gray-400">Add your education background</span>
+            )}
 
             </div>
 

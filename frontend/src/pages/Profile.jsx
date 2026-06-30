@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getProfile } from "../services/api.js";
 
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import ProfileHeader from "../components/profile/ProfileHeader";
@@ -13,25 +14,56 @@ import EducationCard from "../components/profile/EducationCard";
 
 export default function Profile() {
 
-    const user = JSON.parse(localStorage.getItem("user"));
-
     const [isEditing, setIsEditing] = useState(false);
 
-const [profileData, setProfileData] = useState({
+    const [profile, setProfile] = useState(null);
 
-    username: user.username,
+    const [loading, setLoading] = useState(true);
 
-    email: user.email,
+    useEffect(() => {
 
-    about: "",
+        fetchProfile();
 
-    skills: [],
+    }, []);
 
-    experience: [],
+    const fetchProfile = async () => {
 
-    education: []
+        try {
 
-});
+            const response = await getProfile();
+
+            console.log(response.data);
+
+setProfile(response.data);
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+        }
+
+        finally {
+
+            setLoading(false);
+
+        }
+
+    };
+    if (loading) {
+
+    return (
+
+        <div className="p-10">
+
+            Loading...
+
+        </div>
+
+    );
+
+}
 
     return (
 
@@ -40,40 +72,55 @@ const [profileData, setProfileData] = useState({
             <div className="space-y-8">
 
                <ProfileHeader
-               user={user}
 
                 isEditing={isEditing}
 
                 setIsEditing={setIsEditing}
+
+                profile={profile} 
                 />
 {
-    user?.role === "freelancer" ? (
+    profile.user?.role === "freelancer" ? (
 
         <>
             <AboutCard
 
-                profileData={profileData}
-
-                setProfileData={setProfileData}
+                setProfile={setProfile}
 
                 isEditing={isEditing}
+
+                profile={profile} 
 
             />
             <SkillsCard
 
-            profileData={profileData}
-
-            setProfileData={setProfileData}
+            setProfile={setProfile}
 
             isEditing={isEditing}
 
+            profile={profile} 
+
             />
-            <ExperienceCard />
-            <EducationCard />
+            <ExperienceCard
+            setProfile={setProfile}
+
+            isEditing={isEditing}
+
+            profile={profile} 
+            />
+
+            <EducationCard
+            setProfile={setProfile}
+
+            isEditing={isEditing}
+
+            profile={profile} 
+            />
+
             {/* <PortfolioCard /> */}
         </>
 
-    ) : user?.role === "client" ? (
+    ) : profile.user?.role === "client" ? (
 
         <>
             <CompanyCard />
