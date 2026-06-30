@@ -9,29 +9,117 @@ const userProfileSchema = new Schema(
             unique: true
         },
 
-        bio: {
+        // Personal Information
+        firstName: {
             type: String,
-            default: ''
+            default: ""
         },
 
-        skills: {
-            type: [String],
-            default: []
+        lastName: {
+            type: String,
+            default: ""
         },
 
-        experience: {
+        phone: {
             type: String,
-            default: ''
+            default: ""
         },
 
-        profilePicture: {
+        dateOfBirth: {
+            type: Date
+        },
+
+        gender: {
             type: String,
-            default: ''
+            enum: ["male", "female", "other", ""],
+            default: ""
         },
 
         location: {
             type: String,
-            default: ''
+            default: ""
+        },
+
+        profilePicture: {
+            type: String,
+            default: ""
+        },
+
+        // Professional Information
+        headline: {
+            type: String,
+            default: ""
+        },
+
+        about: {
+            type: String,
+            default: ""
+        },
+
+        availability: {
+            type: String,
+            enum: [
+                "Available",
+                "Busy",
+                "Not Available"
+            ],
+            default: "Available"
+        },
+        skills: [{
+            type: String
+        }],
+
+        languages: [{
+            type: String
+        }],
+
+        experience: [{
+            jobTitle: String,
+            company: String,
+            startDate: Date,
+            endDate: Date,
+            currentlyWorking: Boolean,
+            description: String
+        }],
+
+        education: [{
+            degree: String,
+            institute: String,
+            fieldOfStudy: String,
+            startYear: Number,
+            endYear: Number
+        }],
+
+        portfolio: {
+
+            github: {
+                type: String,
+                default: ""
+            },
+
+            linkedin: {
+                type: String,
+                default: ""
+            },
+
+            website: {
+                type: String,
+                default: ""
+            },
+
+            resume: {
+                type: String,
+                default: ""
+            }
+
+        },
+
+        profileCompletion: {
+
+            type: Number,
+
+            default: 0
+
         }
     },
     {timestamps: true}

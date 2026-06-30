@@ -2,6 +2,8 @@ import {User} from '../models/user.model.js'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from '../services/email.services.js';
 import crypto from 'crypto'
+import { UserProfile } from '../models/profile.model.js';
+
 
 // Register
 export const registerUser = async(req, res) =>{
@@ -40,6 +42,12 @@ export const registerUser = async(req, res) =>{
             verificationTokenExpires: Date.now() + 1000 * 60 * 10
         });
 
+        // Create empty profile
+        await UserProfile.create({
+            user: user._id
+        });
+
+        // Send verification email
         await(sendVerificationEmail(user.email, verificationToken))
 
         res.status(201).json({

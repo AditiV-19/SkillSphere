@@ -2,83 +2,137 @@ import {UserProfile} from '../models/profile.model.js'
 
 // Create Profile
 
-export const createProfile = async(req, res) =>{
+export const createProfile = async (req, res) => {
+
     try {
-        const {bio, skills, experience, profilePicture, location} = req.body;
 
-        //allow non-exisiting profile
-        const existing = await UserProfile.findOne({user: req.user.id})
-
-        if(existing){
-            return res.status(400).json({ message: 'Profile already exists' })
-        }
-
-        // create user
-        const profile = await UserProfile.create({
-            user: req.user.id,
-            bio,
-            skills,
-            experience,
-            profilePicture,
-            location
+        const existingProfile = await UserProfile.findOne({
+            user: req.user.id
         });
 
-        res.status(201).json({
-            message: 'Profile created successfully!',
-            profile
-        })
+        if (existingProfile) {
 
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+            return res.status(400).json({
+                message: "Profile already exists"
+            });
+
+        }
+
+        const profile = await UserProfile.create({
+
+            user: req.user.id,
+
+            ...req.body
+
+        });
+
+        return res.status(201).json({
+
+            message: "Profile created successfully",
+
+            profile
+
+        });
+
     }
-}
+
+    catch (error) {
+
+        return res.status(500).json({
+
+            message: "Internal Server Error",
+
+            error: error.message
+
+        });
+
+    }
+
+};
 
 
 // Get Profile
 
-export const getProfile = async(req, res) =>{
-    try {
-        //allow exisiting profile
-        
-        const profile = await UserProfile.findOne({user: req.user.id})
-        .populate('user', '-password')
+export const getProfile = async (req, res) => {
 
-        if(!profile){
-            return res.status(400).json({ message: 'Profile not found' })
+    try {
+
+        const profile = await UserProfile.findOne({
+            user: req.user.id
+        }).populate("user email role isVerified");
+
+        if (!profile) {
+
+            return res.status(404).json({
+                message: "Profile not found"
+            });
+
         }
 
-        res.status(201).json({
-            profile
-        })
+        res.status(200).json(profile);
 
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error', error: error.message });
     }
-}
+
+    catch (error) {
+
+        res.status(500).json({
+            message: "Internal Server Error",
+            error: error.message
+        });
+
+    }
+
+};
 
 // Update Profile
 
-export const updateProfile = async(req, res) =>{
-    try {
-        //allow exisiting profile
-        
-        const profile = await UserProfile.findOne({user: req.user.id})
-        .populate('user', '-password')
+export const updateProfile = async (req, res) => {
 
-        if(!profile){
-            return res.status(400).json({ message: 'Profile not found' })
+    try {
+
+        const profile = await UserProfile.findOneAndUpdate(
+
+            {
+                user: req.user.id
+            },
+
+            req.body,
+
+            {
+                new: true,
+                runValidators: true
+            }
+
+        ).populate("user email role isVerified");
+
+        if (!profile) {
+
+            return res.status(404).json({
+                message: "Profile not found"
+            });
+
         }
 
-        Object.assign(profile, req.body);   //assign body.attribute (if exists) to profile 
-        await profile.save();
+        res.status(200).json({
 
+            message: "Profile updated successfully",
 
-        res.status(201).json({
-            message: 'Profile updated!',
             profile
-        })
 
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        });
+
     }
-}
+
+    catch (error) {
+
+        res.status(500).json({
+
+            message: "Internal Server Error",
+
+            error: error.message
+
+        });
+
+    }
+
+};
