@@ -5,7 +5,7 @@ import Home from "./pages/Home"
 import Login from "./pages/auth/Login"
 import Register from "./pages/auth/Register"
 import DashboardLayout from  "./components/dashboard/DashboardLayout"
-import FreelancerProfile from "./Profile"
+import FreelancerProfile from "./pages/Profile"
 import VerifyEmail from "./pages/auth/VerifyEmail"
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboards from './pages/Dashboards'

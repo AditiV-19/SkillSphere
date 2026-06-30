@@ -25,7 +25,7 @@ export const sidebarMenus = {
         {
             label: "My Profile",
             icon: FaUser,
-            route: "/profile"
+            route: "/freelancer/profile"
         },
 
         {
