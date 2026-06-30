@@ -9,3 +9,8 @@ export default defineConfig({
     tailwindcss(),
 ],
 })
+
+// vite.config.js
+tailwindcss({
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+})
