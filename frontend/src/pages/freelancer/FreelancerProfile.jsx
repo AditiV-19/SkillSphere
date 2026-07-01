@@ -39,22 +39,26 @@ export default function FreelancerProfile() {
 
   const [loading, setLoading] = useState(true);
 
-
-const [saving, setSaving] = useState(false); // Make sure you have this state defined
-
 const handleSubmit = async (formData) => {
-  setSaving(true);
   try {
-    await updateProfile(formData); 
-    setProfile(formData); 
-    setIsEditing(false); 
+
+    const response = await updateProfile(formData);
+
+    console.log("UPDATED PROFILE:", response.data);
+
+    setProfile(response.data);
+
+    setIsEditing(false);
+
   } catch (error) {
-    console.error("Failed to save:", error);
-  } finally {
-    setSaving(false);
+
+    console.error(
+      "Failed to save:",
+      error.response?.data || error.message
+    );
+
   }
 };
-
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -62,8 +66,6 @@ const handleSubmit = async (formData) => {
   const fetchProfile = async () => {
     try {
       const response = await getProfile();
-
-      console.log(response.data);
 
       setProfile(response.data);
     } catch (error) {
@@ -77,14 +79,14 @@ const handleSubmit = async (formData) => {
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-8">
         <ProfileHeader
           isEditing={isEditing}
           setIsEditing={setIsEditing}
           profile={profile}
         />
-                {/* content grid */}
+        {/* content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* left column */}
           <div className="lg:col-span-2 space-y-6">
@@ -106,21 +108,29 @@ const handleSubmit = async (formData) => {
                         )}
                       </div>
                       <div className="pb-1">
-                        <h3 className="font-semibold text-slate-900">{exp.jobTitle}</h3>
+                        <h3 className="font-semibold text-slate-900">
+                          {exp.jobTitle}
+                        </h3>
                         <p className="text-sm text-slate-600">{exp.company}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
                           {formatDate(exp.startDate)} —{" "}
-                          {exp.currentlyWorking ? "Present" : formatDate(exp.endDate)}
+                          {exp.currentlyWorking
+                            ? "Present"
+                            : formatDate(exp.endDate)}
                         </p>
                         {exp.description && (
-                          <p className="text-sm text-slate-600 mt-1.5">{exp.description}</p>
+                          <p className="text-sm text-slate-600 mt-1.5">
+                            {exp.description}
+                          </p>
                         )}
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-slate-400">No experience added yet.</p>
+                <p className="text-sm text-slate-400">
+                  No experience added yet.
+                </p>
               )}
             </SectionCard>
 
@@ -129,7 +139,9 @@ const handleSubmit = async (formData) => {
                 <ul className="space-y-4">
                   {profile.education.map((edu, i) => (
                     <li key={i}>
-                      <h3 className="font-semibold text-slate-900">{edu.degree}</h3>
+                      <h3 className="font-semibold text-slate-900">
+                        {edu.degree}
+                      </h3>
                       <p className="text-sm text-slate-600">
                         {edu.institute}
                         {edu.fieldOfStudy ? ` · ${edu.fieldOfStudy}` : ""}
@@ -141,7 +153,9 @@ const handleSubmit = async (formData) => {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-slate-400">No education added yet.</p>
+                <p className="text-sm text-slate-400">
+                  No education added yet.
+                </p>
               )}
             </SectionCard>
           </div>
@@ -178,7 +192,9 @@ const handleSubmit = async (formData) => {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-400">No languages added yet.</p>
+                <p className="text-sm text-slate-400">
+                  No languages added yet.
+                </p>
               )}
             </SectionCard>
 
@@ -228,25 +244,23 @@ const handleSubmit = async (formData) => {
                   !profile.portfolio?.linkedin &&
                   !profile.portfolio?.website &&
                   !profile.portfolio?.resume && (
-                    <p className="text-sm text-slate-400">No links added yet.</p>
+                    <p className="text-sm text-slate-400">
+                      No links added yet.
+                    </p>
                   )}
               </div>
             </SectionCard>
           </div>
-          </div>
+        </div>
       </div>
 
       {isEditing && (
-
-    <EditProfileModal
-
-        profile={profile}
-        onClose={() => setIsEditing(false)}
-        onSave={handleSubmit}
-
-    />
-
-)}
-    </DashboardLayout>
+        <EditProfileModal
+          profile={profile}
+          onClose={() => setIsEditing(false)}
+          onSave={handleSubmit}
+        />
+      )}
+    </>
   );
 }

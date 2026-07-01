@@ -1,18 +1,23 @@
-import { useState } from "react";
-import { X, Plus, Trash2, Camera, Save } from "lucide-react";
+import { useState, useRef } from "react";
+import { X, Plus, Trash2, Camera, Save, Pencil } from "lucide-react";
 
+import { uploadProfileImage } from "../../services/api.js";
 
 //-------------FUNCTIONS-------------------
 
+//sets ui for the label and input field
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+        {label}
+      </label>
       {children}
     </div>
   );
 }
 
+//updates the list of tags for skills and languages
 function TagInputList({ label, items, onChange, placeholder }) {
   const [draft, setDraft] = useState("");
 
@@ -27,13 +32,13 @@ function TagInputList({ label, items, onChange, placeholder }) {
     setDraft("");
   };
 
-
-//-------------CONSTS-------------------
   const removeTag = (tag) => onChange(items.filter((t) => t !== tag));
 
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+        {label}
+      </label>
       <div className="flex flex-wrap gap-2 mb-2">
         {items.map((tag) => (
           <span
@@ -77,13 +82,16 @@ function TagInputList({ label, items, onChange, placeholder }) {
   );
 }
 
-
 const inputClass =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
 
-
-const TABS = ["Personal", "Professional", "Experience", "Education", "Portfolio"];
-
+const TABS = [
+  "Personal",
+  "Professional",
+  "Experience",
+  "Education",
+  "Portfolio",
+];
 
 const formatDate = (date) => {
   if (!date) return "Present";
@@ -98,10 +106,6 @@ const toInputDate = (date) => {
   if (isNaN(d)) return "";
   return d.toISOString().split("T")[0];
 };
-const initials = (first = "", last = "", user=`${profile.user.username}`) =>
-    `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || `${user.charAt(0)}`.toUpperCase();
-
-
 
 const emptyExperience = () => ({
   jobTitle: "",
@@ -122,8 +126,11 @@ const emptyEducation = () => ({
 
 //-------------MAIN FUNCTION-------------------
 
-export default function EditProfileModal({ profile, onClose, onSave}) {
-    
+export default function EditProfileModal({ profile, onClose, onSave }) {
+  const initials = (first = "", last = "", user = `${profile.user.username}`) =>
+    `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() ||
+    `${user.charAt(0)}`.toUpperCase();
+
   const [form, setForm] = useState({
     ...profile,
     dateOfBirth: toInputDate(profile.dateOfBirth),
@@ -135,9 +142,13 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
   const [activeTab, setActiveTab] = useState("Personal");
   const [saving, setSaving] = useState(false);
 
-  const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+  const update = (field, value) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
   const updatePortfolio = (field, value) =>
-    setForm((prev) => ({ ...prev, portfolio: { ...prev.portfolio, [field]: value } }));
+    setForm((prev) => ({
+      ...prev,
+      portfolio: { ...prev.portfolio, [field]: value },
+    }));
 
   const updateExperience = (index, field, value) => {
     const next = [...form.experience];
@@ -145,25 +156,65 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
     if (field === "currentlyWorking" && value) next[index].endDate = "";
     update("experience", next);
   };
-  const addExperience = () => update("experience", [...form.experience, emptyExperience()]);
+  const addExperience = () =>
+    update("experience", [...form.experience, emptyExperience()]);
   const removeExperience = (index) =>
-    update("experience", form.experience.filter((_, i) => i !== index));
+    update(
+      "experience",
+      form.experience.filter((_, i) => i !== index),
+    );
 
   const updateEducation = (index, field, value) => {
     const next = [...form.education];
     next[index] = { ...next[index], [field]: value };
     update("education", next);
   };
-  const addEducation = () => update("education", [...form.education, emptyEducation()]);
+  const addEducation = () =>
+    update("education", [...form.education, emptyEducation()]);
   const removeEducation = (index) =>
-    update("education", form.education.filter((_, i) => i !== index));
+    update(
+      "education",
+      form.education.filter((_, i) => i !== index),
+    );
+
+    //Upload Profile Image
+  const [preview, setPreview] = useState(profile.profilePicture || "");
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    setSelectedImage(file);
+
+    setPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setSaving(true);
+
     try {
-      await onSave(form);
+      let imageUrl = profile.profilePicture;
+
+      if (selectedImage) {
+        const res = await uploadProfileImage(selectedImage);
+
+        imageUrl = res.data.imageUrl;
+      }
+      console.log("Image URL:", imageUrl);
+      await onSave({
+        ...form,
+        profilePicture: imageUrl,
+      });
+
       onClose();
+    } catch (error) {
+      console.log("Profile update failed:", error);
     } finally {
       setSaving(false);
     }
@@ -172,7 +223,10 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* backdrop */}
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       {/* modal */}
       <div className="relative bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden">
@@ -206,13 +260,20 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
         </div>
 
         {/* body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto px-6 py-5"
+        >
           {activeTab === "Personal" && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden ring-2 ring-blue-200 shrink-0">
-                  {form.profilePicture ? (
-                    <img src={form.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                  {preview ? (
+                    <img
+                      src={preview}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-blue-700 font-semibold">
                       {initials(form.firstName, form.lastName)}
@@ -224,16 +285,28 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        value={form.profilePicture}
-                        onChange={(e) => update("profilePicture", e.target.value)}
+                        value={preview}
+                        onChange={(e) =>
+                          update("profilePicture", e.target.value)
+                        }
                         placeholder="https://..."
                         className={inputClass}
                       />
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+
+                      {/* Trigger button */}
                       <button
                         type="button"
+                        onClick={() => fileInputRef.current.click()} // Clicks the hidden input
                         className="px-3 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50"
                       >
-                        <Camera className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" />
                       </button>
                     </div>
                   </Field>
@@ -357,7 +430,10 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
           {activeTab === "Experience" && (
             <div className="space-y-4">
               {form.experience.map((exp, i) => (
-                <div key={i} className="rounded-xl border border-slate-200 p-4 relative">
+                <div
+                  key={i}
+                  className="rounded-xl border border-slate-200 p-4 relative"
+                >
                   <button
                     type="button"
                     onClick={() => removeExperience(i)}
@@ -370,7 +446,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="text"
                         value={exp.jobTitle}
-                        onChange={(e) => updateExperience(i, "jobTitle", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(i, "jobTitle", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
@@ -378,7 +456,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="text"
                         value={exp.company}
-                        onChange={(e) => updateExperience(i, "company", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(i, "company", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
@@ -388,7 +468,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="date"
                         value={toInputDate(exp.startDate)}
-                        onChange={(e) => updateExperience(i, "startDate", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(i, "startDate", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
@@ -397,7 +479,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                         type="date"
                         value={toInputDate(exp.endDate)}
                         disabled={exp.currentlyWorking}
-                        onChange={(e) => updateExperience(i, "endDate", e.target.value)}
+                        onChange={(e) =>
+                          updateExperience(i, "endDate", e.target.value)
+                        }
                         className={`${inputClass} disabled:bg-slate-100 disabled:text-slate-400`}
                       />
                     </Field>
@@ -406,7 +490,13 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                     <input
                       type="checkbox"
                       checked={exp.currentlyWorking}
-                      onChange={(e) => updateExperience(i, "currentlyWorking", e.target.checked)}
+                      onChange={(e) =>
+                        updateExperience(
+                          i,
+                          "currentlyWorking",
+                          e.target.checked,
+                        )
+                      }
                       className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                     I currently work here
@@ -414,7 +504,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                   <Field label="Description">
                     <textarea
                       value={exp.description}
-                      onChange={(e) => updateExperience(i, "description", e.target.value)}
+                      onChange={(e) =>
+                        updateExperience(i, "description", e.target.value)
+                      }
                       rows={3}
                       className={inputClass}
                     />
@@ -434,7 +526,10 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
           {activeTab === "Education" && (
             <div className="space-y-4">
               {form.education.map((edu, i) => (
-                <div key={i} className="rounded-xl border border-slate-200 p-4 relative">
+                <div
+                  key={i}
+                  className="rounded-xl border border-slate-200 p-4 relative"
+                >
                   <button
                     type="button"
                     onClick={() => removeEducation(i)}
@@ -447,7 +542,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="text"
                         value={edu.degree}
-                        onChange={(e) => updateEducation(i, "degree", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(i, "degree", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
@@ -455,7 +552,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="text"
                         value={edu.institute}
-                        onChange={(e) => updateEducation(i, "institute", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(i, "institute", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
@@ -465,7 +564,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="text"
                         value={edu.fieldOfStudy}
-                        onChange={(e) => updateEducation(i, "fieldOfStudy", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(i, "fieldOfStudy", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
@@ -473,7 +574,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="number"
                         value={edu.startYear}
-                        onChange={(e) => updateEducation(i, "startYear", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(i, "startYear", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
@@ -481,7 +584,9 @@ export default function EditProfileModal({ profile, onClose, onSave}) {
                       <input
                         type="number"
                         value={edu.endYear}
-                        onChange={(e) => updateEducation(i, "endYear", e.target.value)}
+                        onChange={(e) =>
+                          updateEducation(i, "endYear", e.target.value)
+                        }
                         className={inputClass}
                       />
                     </Field>
