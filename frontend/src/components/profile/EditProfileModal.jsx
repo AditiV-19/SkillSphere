@@ -19,44 +19,50 @@ function Field({ label, children }) {
 
 //updates the list of tags for skills and languages
 function SkillInputList({ label, items, onChange, placeholder }) {
-  const [draft, setDraft] = useState({ 
-    name: "", 
-    proficiency: "intermediate", 
-    yearsOfExperience: 0 
+  const [draft, setDraft] = useState({
+    name: "",
+    proficiency: "intermediate",
+    yearsOfExperience: 0,
   });
 
   const addTag = () => {
     if (!draft.name.trim()) return;
-    
-    // Prevent duplicates by checking if the name already exists
-   const skillName = draft.name.trim();
 
-if (
-    items.some(
-        item =>
-            item.name.toLowerCase() === skillName.toLowerCase()
-    )
-) {
-    return;
-}
+    // Prevent duplicates by checking if the name already exists
+    const skillName = draft.name.trim();
+
+    if (
+      items.some((item) => item.name.toLowerCase() === skillName.toLowerCase())
+    ) {
+      return;
+    }
 
     onChange([...items, { ...draft }]);
     setDraft({ name: "", proficiency: "intermediate", yearsOfExperience: 0 });
   };
 
-const removeSkill = (index) => {
-  onChange(items.filter((_, i) => i !== index));
-};
+  const removeSkill = (index) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
-      
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+        {label}
+      </label>
+
       {/* Display List */}
       <div className="flex flex-wrap gap-2 mb-2">
         {items.map((item) => (
-          <span key={item.name} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full">
+          <span
+            key={item.name}
+            className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full"
+          >
             {item.name} ({item.proficiency}, {item.yearsOfExperience}y)
-            <button type="button" onClick={() => removeSkill(items.indexOf(item))} className="hover:text-blue-900">
+            <button
+              type="button"
+              onClick={() => removeSkill(items.indexOf(item))}
+              className="hover:text-blue-900"
+            >
               <X className="w-3.5 h-3.5" />
             </button>
           </span>
@@ -86,10 +92,19 @@ const removeSkill = (index) => {
           <input
             type="number"
             value={draft.yearsOfExperience}
-            onChange={(e) => setDraft({ ...draft, yearsOfExperience: parseInt(e.target.value) || 0 })}
+            onChange={(e) =>
+              setDraft({
+                ...draft,
+                yearsOfExperience: parseInt(e.target.value) || 0,
+              })
+            }
             className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <button type="button" onClick={addTag} className="bg-blue-600 text-white px-3 rounded-lg">
+          <button
+            type="button"
+            onClick={addTag}
+            className="bg-blue-600 text-white px-3 rounded-lg"
+          >
             <Plus className="w-4 h-4" />
           </button>
         </div>
@@ -171,6 +186,7 @@ const TABS = [
   "Experience",
   "Education",
   "Portfolio",
+  "Certifications",
 ];
 
 const formatDate = (date) => {
@@ -204,6 +220,13 @@ const emptyEducation = () => ({
   endYear: "",
 });
 
+const emptyCertification = () => ({
+  title: "",
+  issuedBy: "",
+  issueDate: "",
+  certificateUrl: "",
+});
+
 //-------------MAIN FUNCTION-------------------
 
 export default function EditProfileModal({ profile, onClose, onSave }) {
@@ -216,6 +239,9 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
     dateOfBirth: toInputDate(profile.dateOfBirth),
     experience: profile.experience?.length ? [...profile.experience] : [],
     education: profile.education?.length ? [...profile.education] : [],
+    certifications: profile.certifications?.length
+      ? [...profile.certifications]
+      : [],
     portfolio: { ...profile.portfolio },
   });
 
@@ -230,13 +256,14 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
       portfolio: { ...prev.portfolio, [field]: value },
     }));
 
+  //Skills
+  const updateSkills = (value) =>
+    setForm((prev) => ({
+      ...prev,
+      skills: value,
+    }));
 
-    const updateSkills = (value) =>
-  setForm((prev) => ({
-    ...prev,
-    skills: value,
-  }));
-
+  //Experience
   const updateExperience = (index, field, value) => {
     const next = [...form.experience];
     next[index] = { ...next[index], [field]: value };
@@ -251,6 +278,7 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
       form.experience.filter((_, i) => i !== index),
     );
 
+  //Education
   const updateEducation = (index, field, value) => {
     const next = [...form.education];
     next[index] = { ...next[index], [field]: value };
@@ -264,7 +292,21 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
       form.education.filter((_, i) => i !== index),
     );
 
-    //Upload Profile Image
+  //Certifications
+  const updateCertification = (index, field, value) => {
+    const next = [...form.certifications];
+    next[index] = { ...next[index], [field]: value };
+    update("certifications", next);
+  };
+  const addCertification = () =>
+    update("certifications", [...form.certifications, emptyCertification()]);
+  const removeCertification = (index) =>
+    update(
+      "certifications",
+      form.certifications.filter((_, i) => i !== index),
+    );
+
+  //Upload Profile Image
   const [preview, setPreview] = useState(profile.profilePicture || "");
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -293,7 +335,6 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
 
         imageUrl = res.data.imageUrl;
       }
-      console.log("Image URL:", imageUrl);
       await onSave({
         ...form,
         profilePicture: imageUrl,
@@ -499,9 +540,9 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
               </Field>
 
               <SkillInputList
-               label="Skills"
-    items={form.skills}
-    onChange={updateSkills}
+                label="Skills"
+                items={form.skills}
+                onChange={updateSkills}
                 placeholder="Add a skill and press Enter"
               />
 
@@ -728,6 +769,82 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
                   className={inputClass}
                 />
               </Field>
+            </div>
+          )}
+
+          {/* Certifications */}
+          {activeTab === "Certifications" && (
+            <div className="space-y-4">
+              {form.certifications.map((cert, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-slate-200 p-4 relative"
+                >
+                  <button
+                    type="button"
+                    onClick={() => removeCertification(i)}
+                    className="absolute top-3 right-3 text-slate-400 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div className="grid grid-cols-2 gap-4 mb-3 pr-8">
+                    <Field label="Title">
+                      <input
+                        type="text"
+                        value={cert.title || ""}
+                        onChange={(e) =>
+                          updateCertification(i, "title", e.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="issued by">
+                      <input
+                        type="text"
+                        value={cert.issuedBy || ""}
+                        onChange={(e) =>
+                          updateCertification(i, "issuedBy", e.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Field label="issue date">
+                      <input
+                        type="date"
+                        value={toInputDate(cert.issueDate)}
+                        onChange={(e) =>
+                          updateCertification(i, "issueDate", e.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </Field>
+
+                    <Field label="certificate URL">
+                      <input
+                        type="text"
+                        value={cert.certificateUrl || ""}
+                        onChange={(e) =>
+                          updateCertification(
+                            i,
+                            "certificateUrl",
+                            e.target.value,
+                          )
+                        }
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addCertification}
+                className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+              >
+                <Plus className="w-4 h-4" /> Add certification
+              </button>
             </div>
           )}
         </form>

@@ -39,26 +39,19 @@ export default function FreelancerProfile() {
 
   const [loading, setLoading] = useState(true);
 
-const handleSubmit = async (formData) => {
-  try {
+  const handleSubmit = async (formData) => {
+    try {
+      const response = await updateProfile(formData);
 
-    const response = await updateProfile(formData);
+      console.log("UPDATED PROFILE:", response.data);
 
-    console.log("UPDATED PROFILE:", response.data);
+      setProfile(response.data);
 
-    setProfile(response.data);
-
-    setIsEditing(false);
-
-  } catch (error) {
-
-    console.error(
-      "Failed to save:",
-      error.response?.data || error.message
-    );
-
-  }
-};
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to save:", error.response?.data || error.message);
+    }
+  };
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -77,7 +70,6 @@ const handleSubmit = async (formData) => {
   if (loading) {
     return <div className="p-10">Loading...</div>;
   }
-
   return (
     <>
       <div className="space-y-8">
@@ -98,32 +90,30 @@ const handleSubmit = async (formData) => {
 
             <SectionCard icon={Briefcase} title="Experience">
               {profile.experience?.length ? (
-                <ul className="space-y-6">
+                <ul className="relative border-l-2 border-blue-200 ml-1.5">
                   {profile.experience.map((exp, i) => (
-                    <li key={i} className="flex gap-4">
-                      <div className="flex flex-col items-center pt-1">
-                        <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                        {i !== profile.experience.length - 1 && (
-                          <div className="w-px flex-1 bg-blue-100 mt-1" />
-                        )}
-                      </div>
-                      <div className="pb-1">
-                        <h3 className="font-semibold text-slate-900">
-                          {exp.jobTitle}
-                        </h3>
-                        <p className="text-sm text-slate-600">{exp.company}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {formatDate(exp.startDate)} —{" "}
-                          {exp.currentlyWorking
-                            ? "Present"
-                            : formatDate(exp.endDate)}
+                    <li
+                      key={i}
+                      className={`relative pl-6 ${
+                        i !== profile.experience.length - 1 ? "pb-8" : ""
+                      }`}
+                    >
+                      <span className="absolute -left-1.75 top-1 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-white" />
+                      <h3 className="font-semibold text-slate-900">
+                        {exp.jobTitle}
+                      </h3>
+                      <p className="text-sm text-slate-600">{exp.company}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {formatDate(exp.startDate)} —{" "}
+                        {exp.currentlyWorking
+                          ? "Present"
+                          : formatDate(exp.endDate)}
+                      </p>
+                      {exp.description && (
+                        <p className="text-sm text-slate-600 mt-1.5">
+                          {exp.description}
                         </p>
-                        {exp.description && (
-                          <p className="text-sm text-slate-600 mt-1.5">
-                            {exp.description}
-                          </p>
-                        )}
-                      </div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -136,9 +126,16 @@ const handleSubmit = async (formData) => {
 
             <SectionCard icon={GraduationCap} title="Education">
               {profile.education?.length ? (
-                <ul className="space-y-4">
+                <ul className="relative border-l-2 border-blue-200 ml-1.5">
                   {profile.education.map((edu, i) => (
-                    <li key={i}>
+                    <li
+                      key={i}
+                      className={`relative pl-6 ${
+                        i !== profile.education.length - 1 ? "pb-8" : ""
+                      }`}
+                    >
+                      <span className="absolute -left-1.75 top-1 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-white" />
+
                       <h3 className="font-semibold text-slate-900">
                         {edu.degree}
                       </h3>
@@ -153,8 +150,53 @@ const handleSubmit = async (formData) => {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-slate-400 mt-1.5">
                   No education added yet.
+                </p>
+              )}
+            </SectionCard>
+
+            <SectionCard icon={GraduationCap} title="Certifications">
+              {profile.certifications?.length ? (
+                <ul className="relative border-l-2 border-blue-200 ml-1.5">
+                  {profile.certifications.map((cert, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-4"
+                      className={`relative pl-6 ${
+                        i !== profile.education.length - 1 ? "pb-8" : ""
+                      }`}
+                    >
+                      <span className="absolute -left-1.75 top-1 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-white" />
+
+                      <div className="flex flex-col items-center pt-1">
+                        {i !== profile.certifications.length - 1 && (
+                          <div className="w-px flex-1 bg-blue-100 mt-1" />
+                        )}
+                      </div>
+                      <div className="pb-1">
+                        <p className="text-s text-slate-400 mt-1">
+                          {formatDate(cert.issueDate)}
+                        </p>
+                        <h3 className="font-semibold text-slate-900">
+                          {cert.title}
+                        </h3>
+                        <p className="text-sm text-slate-600">
+                          {cert.issuedBy}
+                        </p>
+
+                        {cert.certificateUrl && (
+                          <p className="text-sm text-slate-600 mt-1.5">
+                            {cert.certificateUrl}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-400">
+                  No certifications added yet.
                 </p>
               )}
             </SectionCard>
@@ -167,20 +209,13 @@ const handleSubmit = async (formData) => {
                 <div className="flex flex-wrap gap-2">
                   {profile.skills.map((skill) => (
                     <span
-                      key={skill}
+                      key={skill._id || skill.name}
                       className="bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full"
                     >
-                      {skill}
+                      {skill.name} • {skill.proficiency} •{" "}
+                      {skill.yearsOfExperience} yrs
                     </span>
                   ))}
-                 {profile.skills.map((skill) => (
-                  <span
-                    key={skill._id || skill.name}
-                    className="bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full"
-                  >
-                    {skill.name} • {skill.proficiency} • {skill.yearsOfExperience} yrs
-                  </span>
-                ))}
                 </div>
               ) : (
                 <p className="text-sm text-slate-400">No skills added yet.</p>
