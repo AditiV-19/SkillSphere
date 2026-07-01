@@ -18,6 +18,86 @@ function Field({ label, children }) {
 }
 
 //updates the list of tags for skills and languages
+function SkillInputList({ label, items, onChange, placeholder }) {
+  const [draft, setDraft] = useState({ 
+    name: "", 
+    proficiency: "intermediate", 
+    yearsOfExperience: 0 
+  });
+
+  const addTag = () => {
+    if (!draft.name.trim()) return;
+    
+    // Prevent duplicates by checking if the name already exists
+   const skillName = draft.name.trim();
+
+if (
+    items.some(
+        item =>
+            item.name.toLowerCase() === skillName.toLowerCase()
+    )
+) {
+    return;
+}
+
+    onChange([...items, { ...draft }]);
+    setDraft({ name: "", proficiency: "intermediate", yearsOfExperience: 0 });
+  };
+
+const removeSkill = (index) => {
+  onChange(items.filter((_, i) => i !== index));
+};
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+      
+      {/* Display List */}
+      <div className="flex flex-wrap gap-2 mb-2">
+        {items.map((item) => (
+          <span key={item.name} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full">
+            {item.name} ({item.proficiency}, {item.yearsOfExperience}y)
+            <button type="button" onClick={() => removeSkill(items.indexOf(item))} className="hover:text-blue-900">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </span>
+        ))}
+      </div>
+
+      {/* Input Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <input
+          type="text"
+          value={draft.name}
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          placeholder="Skill name"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        />
+        <select
+          value={draft.proficiency}
+          onChange={(e) => setDraft({ ...draft, proficiency: e.target.value })}
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        >
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+          <option value="expert">Expert</option>
+        </select>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            value={draft.yearsOfExperience}
+            onChange={(e) => setDraft({ ...draft, yearsOfExperience: parseInt(e.target.value) || 0 })}
+            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <button type="button" onClick={addTag} className="bg-blue-600 text-white px-3 rounded-lg">
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TagInputList({ label, items, onChange, placeholder }) {
   const [draft, setDraft] = useState("");
 
@@ -149,6 +229,13 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
       ...prev,
       portfolio: { ...prev.portfolio, [field]: value },
     }));
+
+
+    const updateSkills = (value) =>
+  setForm((prev) => ({
+    ...prev,
+    skills: value,
+  }));
 
   const updateExperience = (index, field, value) => {
     const next = [...form.experience];
@@ -411,10 +498,10 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
                 </select>
               </Field>
 
-              <TagInputList
-                label="Skills"
-                items={form.skills}
-                onChange={(v) => update("skills", v)}
+              <SkillInputList
+               label="Skills"
+    items={form.skills}
+    onChange={updateSkills}
                 placeholder="Add a skill and press Enter"
               />
 

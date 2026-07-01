@@ -173,6 +173,14 @@ const handleSubmit = async (formData) => {
                       {skill}
                     </span>
                   ))}
+                 {profile.skills.map((skill) => (
+                  <span
+                    key={skill._id || skill.name}
+                    className="bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full"
+                  >
+                    {skill.name} • {skill.proficiency} • {skill.yearsOfExperience} yrs
+                  </span>
+                ))}
                 </div>
               ) : (
                 <p className="text-sm text-slate-400">No skills added yet.</p>

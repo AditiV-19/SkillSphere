@@ -68,6 +68,17 @@ const userProfileSchema = new Schema(
         skills: [{
             type: String
         }],
+        skills: [
+    {
+      name: { type: String, required: true },
+      proficiency: {
+        type: String,
+        enum: ['beginner', 'intermediate', 'advanced', 'expert'],
+        default: 'intermediate',
+      },
+      yearsOfExperience: { type: Number, default: 0 },
+    },
+  ],
 
         languages: [{
             type: String
