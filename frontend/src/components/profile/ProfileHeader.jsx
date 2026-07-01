@@ -58,7 +58,7 @@ export default function ProfileHeader({isEditing, setIsEditing, profile}) {
                     }
                     >
                         {isEditing
-                        ? "Cancel"
+                        ? "Save"
                         : "Edit Profile"}
                 </button>
 
