@@ -1,9 +1,23 @@
 import FreelancerProfile from "./freelancer/FreelancerProfile";
+import ClientProfile from "./client/ClientProfile";
+import AdminProfile from "./admin/AdminProfile";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 export default function Profile() {
+
+    const user = JSON.parse(localStorage.getItem("user"));
+
     return(
         <DashboardLayout>
-            <FreelancerProfile />
+            {user?.role === "freelancer" ? (
+                <FreelancerProfile />
+            ) : user?.role === "client" ? (
+                <ClientProfile />
+            ) : user?.role === "admin" ? (
+                <AdminProfile />
+            ) : (
+                <div>Please login</div>
+            )
+            }
         </DashboardLayout>
     )
 }

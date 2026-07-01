@@ -20,7 +20,7 @@ export default function Register() {
       setEmail("");
       setPassword("");
       setRole("");
-      alert("Registration Successful!");
+      alert("Check your mail!");
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.message || "Registration failed");
