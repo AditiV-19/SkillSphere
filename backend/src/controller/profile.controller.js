@@ -1,4 +1,5 @@
 import {UserProfile} from '../models/profile.model.js'
+import {calculateProfileCompletion} from '../utils/profileCompletion.js'
 
 // Create Profile
 
@@ -68,8 +69,10 @@ export const getProfile = async (req, res) => {
             });
 
         }
+         const profileObj = profile.toObject();
+        profileObj.profileCompletion = calculateProfileCompletion(profileObj);
 
-        res.status(200).json(profile);
+        res.status(200).json(profileObj);
 
     }
 
@@ -112,14 +115,10 @@ export const updateProfile = async (req, res) => {
             });
 
         }
+        profile.profileCompletion = calculateProfileCompletion(profile.toObject());
+        await profile.save();
 
-        res.status(200).json({
-
-            message: "Profile updated successfully",
-
-            profile
-
-        });
+        res.status(200).json(profile);
 
     }
 
