@@ -12,17 +12,17 @@ const userProfileSchema = new Schema(
         // Personal Information
         firstName: {
             type: String,
-            default: ""
+            default: "User"
         },
 
         lastName: {
             type: String,
-            default: ""
+            default: "Name"
         },
 
         phone: {
             type: String,
-            default: ""
+            default: "123-456-7890"
         },
 
         dateOfBirth: {
@@ -37,7 +37,7 @@ const userProfileSchema = new Schema(
 
         location: {
             type: String,
-            default: ""
+            default: "India"
         },
 
         profilePicture: {
@@ -48,7 +48,7 @@ const userProfileSchema = new Schema(
         // Professional Information
         headline: {
             type: String,
-            default: ""
+            default: "Software Engineer"
         },
 
         about: {
