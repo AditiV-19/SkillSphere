@@ -67,7 +67,11 @@ export const sidebarMenus = {
             icon: FaHome,
             route: "/client/dashboard"
         },
-
+        {
+            label: "My Profile",
+            icon: FaUser,
+            route: "/client/profile"
+        },
         {
             label: "Post Project",
             icon: FaPlusCircle,
