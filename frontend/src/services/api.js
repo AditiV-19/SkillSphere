@@ -28,12 +28,12 @@ export const verifyEmail = (token) => {
   return API.get(`/verify-email/${token}`);
 };
 
-export const getProfile = () => {
-  return API.get("/users/profile");
+export const getProfile = (role) => {
+  return API.get(`/profile/${role}`);
 };
 
-export const updateProfile = (profileData) => {
-  return API.put("/users/profile", profileData);
+export const updateProfile = (profileData, role) => {
+  return API.put(`/profile/${role}`, profileData);
 };
 
 export const uploadProfileImage = (imageFile) => {
