@@ -2,7 +2,7 @@ import {User} from '../models/user.model.js'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from '../services/email.services.js';
 import crypto from 'crypto'
-import { UserProfile } from '../models/profile.model.js';
+import { FreelancerProfile } from '../models/profile.model.js';
 
 
 // Register
@@ -43,7 +43,7 @@ export const registerUser = async(req, res) =>{
         });
 
         // Create empty profile
-        await UserProfile.create({
+        await FreelancerProfile.create({
             user: user._id
         });
 

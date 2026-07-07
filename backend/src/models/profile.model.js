@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const userProfileSchema = new Schema(
+const freelancerSchema = new Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -248,4 +248,4 @@ export const AdminProfile = mongoose.model("AdminProfile", adminSchema);
 
 export const ClientProfile = mongoose.model("ClientProfile", clientSchema);
 
-export const UserProfile = mongoose.model("UserProfile", userProfileSchema);
+export const FreelancerProfile = mongoose.model("FreelancerProfile", freelancerSchema);

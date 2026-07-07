@@ -1,4 +1,4 @@
-import {UserProfile} from '../models/profile.model.js'
+import {FreelancerProfile} from '../models/profile.model.js'
 import {calculateProfileCompletion} from '../utils/profileCompletion.js'
 
 // Create Profile
@@ -7,7 +7,7 @@ export const createProfile = async (req, res) => {
 
     try {
 
-        const existingProfile = await UserProfile.findOne({
+        const existingProfile = await FreelancerProfile.findOne({
             user: req.user.id
         });
 
@@ -19,7 +19,7 @@ export const createProfile = async (req, res) => {
 
         }
 
-        const profile = await UserProfile.create({
+        const profile = await FreelancerProfile.create({
 
             user: req.user.id,
 
@@ -58,7 +58,7 @@ export const getProfile = async (req, res) => {
 
     try {
 
-        const profile = await UserProfile.findOne({
+        const profile = await FreelancerProfile.findOne({
             user: req.user.id
         }).populate("user", "username email role isVerified");
 
@@ -93,7 +93,7 @@ export const updateProfile = async (req, res) => {
 
     try {
 
-        const profile = await UserProfile.findOneAndUpdate(
+        const profile = await FreelancerProfile.findOneAndUpdate(
 
             {
                 user: req.user.id
