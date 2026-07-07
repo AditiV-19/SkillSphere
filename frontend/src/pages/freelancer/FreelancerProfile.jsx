@@ -39,6 +39,24 @@ export default function FreelancerProfile() {
 
   const [loading, setLoading] = useState(true);
 
+  const handleBooking = async (slot) => {
+    try {
+      // 1. Call your API to update the booking status
+      // await updateProfile({
+      //   action: 'bookSlot',
+      //   slotId: slot._id // Make sure your slot object has an _id
+      // });
+
+      // 2. Refresh the profile data to show the updated UI
+      // await fetchProfile();
+
+      alert("Slot booked successfully!");
+    } catch (error) {
+      console.error("Booking failed:", error);
+      alert("Could not book the slot. It might already be taken.");
+    }
+  };
+
   const handleSubmit = async (formData) => {
     try {
       const response = await updateProfile(formData);
@@ -292,6 +310,71 @@ export default function FreelancerProfile() {
                     </p>
                   )}
               </div>
+            </SectionCard>
+
+            <SectionCard icon={Calendar} title="Book Slots">
+              {profile.availability.slots?.length > 0 ? (
+                <div className="space-y-2">
+                  {profile.availability.slots.map((slot, index) => {
+                    const startDate = new Date(slot.startTime);
+                    const endDate = new Date(slot.endTime);
+
+                    const start = new Date(slot.startTime).toLocaleTimeString(
+                      [],
+                      { hour: "2-digit", minute: "2-digit" },
+                    );
+                    const end = new Date(slot.endTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200"
+                      >
+                        {/* Time Display */}
+                        <span
+                          className={`text-sm font-medium ${slot.isBooked ? "text-slate-400" : "text-slate-700"}`}
+                        >
+                          {startDate.toLocaleDateString("en-IN", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}{" "}
+                          -{" "}
+                          {endDate.toLocaleDateString("en-IN", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}{" "}
+                          <br />
+                          {start} - {end}
+                        </span>
+
+                        {/* Status and Action */}
+                        {slot.isBooked ? (
+                          <span className="bg-red-100 text-red-500 text-xs font-bold px-3 py-1 rounded-full">
+                            Booked
+                          </span>
+                        ) : profile.user.role === "client" ? (
+                          <span className="bg-slate-200 text-slate-500 text-xs font-bold px-3 py-1 rounded-full">
+                            Your Slot
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleBooking(slot)}
+                            className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-4 py-1.5 rounded-md transition-colors"
+                          >
+                            Book Now
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">No slots available.</p>
+              )}
             </SectionCard>
           </div>
         </div>

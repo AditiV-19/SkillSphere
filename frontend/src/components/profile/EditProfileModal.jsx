@@ -322,6 +322,30 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
     setPreview(URL.createObjectURL(file));
   };
 
+  //add slots in availability
+  const addSlot = () => {
+    const newSlot = {
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      isBooked: false,
+    };
+    update("availability", {
+      ...form.availability,
+      slots: [...(form.availability.slots || []), newSlot],
+    });
+  };
+
+  const updateSlot = (index, field, value) => {
+    const newSlots = [...form.availability.slots];
+    newSlots[index][field] = new Date(value).toISOString();
+    update("availability", { ...form.availability, slots: newSlots });
+  };
+
+  const removeSlot = (index) => {
+    const newSlots = form.availability.slots.filter((_, i) => i !== index);
+    update("availability", { ...form.availability, slots: newSlots });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -527,18 +551,62 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
                 />
               </Field>
 
-              <Field label="Availability">
+              <Field label="Availability Status">
                 <select
-                  value={form.availability}
-                  onChange={(e) => update("availability", e.target.value)}
+                  value={form.availability?.status || "available"}
+                  onChange={(e) =>
+                    update("availability", {
+                      ...form.availability,
+                      status: e.target.value,
+                    })
+                  }
                   className={inputClass}
                 >
-                  <option value="Available">Available</option>
-                  <option value="Busy">Busy</option>
-                  <option value="Not Available">Not Available</option>
+                  <option value="available">Available</option>
+                  <option value="busy">Busy</option>
+                  <option value="unavailable">Unavailable</option>
                 </select>
               </Field>
 
+              {/* Slots Management */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  Manage Slots
+                </label>
+                {form.availability?.slots?.map((slot, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <input
+                      type="datetime-local"
+                      value={slot.startTime.slice(0, 16)}
+                      onChange={(e) =>
+                        updateSlot(index, "startTime", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                    <input
+                      type="datetime-local"
+                      value={slot.endTime.slice(0, 16)}
+                      onChange={(e) =>
+                        updateSlot(index, "endTime", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                    <button
+                      onClick={() => removeSlot(index)}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addSlot}
+                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                >
+                  + Add Slot
+                </button>
+              </div>
               <SkillInputList
                 label="Skills"
                 items={form.skills}

@@ -5,13 +5,14 @@ import Home from "./pages/Home"
 import Login from "./pages/auth/Login"
 import Register from "./pages/auth/Register"
 import DashboardLayout from  "./components/dashboard/DashboardLayout"
-import FreelancerProfile from "./pages/Profile"
 import VerifyEmail from "./pages/auth/VerifyEmail"
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboards from './pages/Dashboards'
-
+import Profile from "./pages/Profile"
 
 export default function App(){
+
+    const user = JSON.parse(localStorage.getItem("user"));
 
     return(
         <Routes>
@@ -28,6 +29,12 @@ export default function App(){
                 path="/login"
                 element={<Login/>}
             />
+             <Route
+                path="/verify-email/:token"
+                element={<VerifyEmail/>}
+            />
+
+
             <Route
                 path="/dashboard"
                 element={
@@ -36,20 +43,7 @@ export default function App(){
                 </ProtectedRoute>
                 }
             />
-            <Route
-                path="/freelancer/profile"
-                element={
-                    <ProtectedRoute allowedRoles={["freelancer"]}>
-                        <FreelancerProfile />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/verify-email/:token"
-                element={<VerifyEmail/>}
-            />
-            
-           <Route path="/freelancer/dashboard" element={
+            <Route path="/freelancer/dashboard" element={
                 <ProtectedRoute allowedRoles={["freelancer"]}>
                     <Dashboards />
                 </ProtectedRoute>
@@ -66,6 +60,29 @@ export default function App(){
                     <Dashboards />
                 </ProtectedRoute>
             } />
+
+
+
+            <Route path="/freelancer/profile" element={
+                <ProtectedRoute allowedRoles={["freelancer"]}>
+                    <Profile />
+                </ProtectedRoute>
+            } />
+
+            <Route path="/admin/profile" element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                    <Profile />
+                </ProtectedRoute>
+            } />
+
+            <Route path="/client/profile" element={
+                <ProtectedRoute allowedRoles={["client"]}>
+                    <Profile />
+                </ProtectedRoute>
+            } />
+           
+            
+           
 
 
         </Routes>

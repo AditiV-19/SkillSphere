@@ -18,9 +18,9 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile }) {
     );
   };
   const availabilityStyles = {
-    Available: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-    Busy: "bg-amber-50 text-amber-700 ring-amber-600/20",
-    "Not Available": "bg-slate-100 text-slate-600 ring-slate-500/20",
+    available: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+    busy: "bg-amber-50 text-amber-700 ring-amber-600/20",
+    unavailable: "bg-slate-100 text-slate-600 ring-slate-500/20",
   };
 
   return (
@@ -50,12 +50,12 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile }) {
               </h1>
               <span
                 className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset ${
-                  availabilityStyles[profile.availability] ||
+                  availabilityStyles[profile.availability?.status] ||
                   availabilityStyles.Available
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                {profile.availability}
+                {profile.availability?.status}
               </span>
             </div>
             <p className="text-slate-600 mt-0.5">{profile.headline}</p>

@@ -57,10 +57,22 @@ const userProfileSchema = new Schema(
     },
 
     availability: {
-      type: String,
-      enum: ["Available", "Busy", "Not Available"],
-      default: "Available",
+      status: {
+        type: String,
+        enum: ["Available", "Busy", "Unavailable"],
+        default: "Available",
+      },
+      // Add this to store actual bookable instances
+      slots: [
+        {
+          startTime: { type: Date, required: true },
+          endTime: { type: Date, required: true },
+          isBooked: { type: Boolean, default: false },
+          bookedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Link to client
+        },
+      ],
     },
+
     skills: [
       {
         name: { type: String, required: true },
@@ -138,5 +150,102 @@ const userProfileSchema = new Schema(
   },
   { timestamps: true },
 );
+
+const clientSchema = new Schema({
+  companyName: {
+    type: String,
+    trim: true,
+  },
+
+  companyWebsite: {
+    type: String,
+  },
+  industry: {
+    type: String,
+  },
+
+  billingDetails: {
+    billingAddress: String,
+    gstNumber: String, // if applicable
+    preferredPaymentMethod: {
+      type: String,
+      enum: ["razorpay", "stripe", "bank_transfer"],
+      default: "razorpay",
+    },
+  },
+
+  postedGigs: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Gig",
+    },
+  ],
+  savedFreelancers: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+
+  // Module 8: Reputation as a client (how freelancers rate them)
+  reputationScore: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5,
+  },
+  totalReviews: {
+    type: Number,
+    default: 0,
+  },
+
+  // Analytics
+  stats: {
+    gigsPosted: {
+      type: Number,
+      default: 0,
+    },
+    totalSpent: {
+      type: Number,
+      default: 0,
+    },
+    activeGigs: {
+      type: Number,
+      default: 0,
+    },
+  },
+
+  isVerified: {
+    type: Boolean,
+    default: false,
+  }, // verified client badge
+});
+
+const adminSchema = new Schema({
+  adminLevel: {
+    type: String,
+    enum: ["super_admin", "moderator", "support"],
+    default: "moderator",
+  },
+
+  permissions: {
+    manageUsers: { type: Boolean, default: true },
+    suspendAccounts: { type: Boolean, default: true },
+    verifyFreelancers: { type: Boolean, default: true },
+    approveGigs: { type: Boolean, default: true },
+    monitorPayments: { type: Boolean, default: false },
+    resolveDisputes: { type: Boolean, default: true },
+    viewAnalytics: { type: Boolean, default: true },
+  },
+
+  // Links to AdminLogs collection (Module: Advanced Database Collections)
+  actionLogs: [{ type: Schema.Types.ObjectId, ref: "AdminLog" }],
+
+  managedDisputes: [{ type: Schema.Types.ObjectId, ref: "Dispute" }],
+});
+
+export const AdminProfile = mongoose.model("AdminProfile", adminSchema);
+
+export const ClientProfile = mongoose.model("ClientProfile", clientSchema);
 
 export const UserProfile = mongoose.model("UserProfile", userProfileSchema);
