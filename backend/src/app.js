@@ -3,7 +3,7 @@ import cors from "cors"
 
 import userRouter from './routes/user.route.js'
 import profileRouter from './routes/profile.route.js'
-import uploadRouter from './routes/uploadImage.model.js'
+import uploadRouter from './routes/uploadImage.route.js'
 
 const app = express()   //create an express app
 

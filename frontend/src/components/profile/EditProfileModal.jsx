@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { X, Plus, Trash2, Camera, Save, Pencil } from "lucide-react";
 
-import { uploadProfileImage } from "../../services/api.js";
+import { uploadProfileImage, uploadResumeToServer } from "../../services/api.js";
 
 //-------------FUNCTIONS-------------------
 
@@ -312,14 +312,24 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
 
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async(e, type) => {
     const file = e.target.files[0];
 
     if (!file) return;
 
+    if (type === 'profile') {
     setSelectedImage(file);
-
     setPreview(URL.createObjectURL(file));
+  } else if (type === 'resume') {
+    try {
+
+      const response = await uploadResumeToServer(file);
+      updatePortfolio("resume", response.data.url)
+    } catch (error) {
+      console.error("Resume upload failed", error);
+    }
+    
+  }
   };
 
   //add slots in availability
@@ -447,7 +457,7 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
                       <input
                         type="file"
                         ref={fileInputRef}
-                        onChange={handleFileChange}
+                        onChange={(e) => handleFileChange(e, 'profile')}
                         accept="image/*"
                         className="hidden"
                       />
@@ -828,15 +838,34 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Resume URL">
-                <input
-                  type="text"
-                  value={form.portfolio.resume}
-                  onChange={(e) => updatePortfolio("resume", e.target.value)}
-                  placeholder="https://link-to-your-resume.pdf"
-                  className={inputClass}
-                />
-              </Field>
+             
+              <Field label="Resume">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={form.portfolio.resume}
+                        onChange={(e) => updatePortfolio("resume", e.target.value)}
+                        placeholder="https://..."
+                        className={inputClass}
+                      />
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={(e) =>handleFileChange(e, 'resume')}
+                        accept="application/pdf"
+                        className="hidden"
+                      />
+
+                      {/* Trigger button */}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current.click()} // Clicks the hidden input
+                        className="px-3 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </Field>
             </div>
           )}
 

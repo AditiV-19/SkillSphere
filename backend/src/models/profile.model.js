@@ -137,9 +137,9 @@ const userProfileSchema = new Schema(
       },
 
       resume: {
-        type: String,
-        default: "",
-      },
+        url: { type: String, default: "" }, 
+        fileName: { type: String, default: "" }, 
+      }
     },
 
     profileCompletion: {

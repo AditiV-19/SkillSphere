@@ -47,3 +47,11 @@ export const uploadProfileImage = (imageFile) => {
     },
   });
 };
+
+export const uploadResumeToServer = (file) => {
+  const formData = new FormData();
+  formData.append("resume", file);
+  return API.post("/users/upload/resume", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
