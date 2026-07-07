@@ -137,9 +137,9 @@ const freelancerSchema = new Schema(
       },
 
       resume: {
-        url: { type: String, default: "" }, 
-        fileName: { type: String, default: "" }, 
-      }
+        url: { type: String, default: "" },
+        fileName: { type: String, default: "" },
+      },
     },
 
     profileCompletion: {
@@ -151,75 +151,250 @@ const freelancerSchema = new Schema(
   { timestamps: true },
 );
 
-const clientSchema = new Schema({
-  companyName: {
-    type: String,
-    trim: true,
-  },
 
-  companyWebsite: {
-    type: String,
-  },
-  industry: {
-    type: String,
-  },
-
-  billingDetails: {
-    billingAddress: String,
-    gstNumber: String, // if applicable
-    preferredPaymentMethod: {
-      type: String,
-      enum: ["razorpay", "stripe", "bank_transfer"],
-      default: "razorpay",
-    },
-  },
-
-  postedGigs: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "Gig",
-    },
-  ],
-  savedFreelancers: [
-    {
+const clientSchema = new Schema(
+  {
+    // ===========================
+    // USER
+    // ===========================
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+      unique: true,
+      index: true,
     },
-  ],
 
-  // Module 8: Reputation as a client (how freelancers rate them)
-  reputationScore: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 5,
-  },
-  totalReviews: {
-    type: Number,
-    default: 0,
-  },
+    // ===========================
+    // COMPANY DETAILS
+    // ===========================
+    companyLogo: {
+      type: String,
+      default: "",
+    },
 
-  // Analytics
-  stats: {
-    gigsPosted: {
+    companyName: {
+      type: String,
+      default: "UserName",
+      trim: true,
+      required: true,
+    },
+
+    companyDescription: {
+      type: String,
+      default: "",
+      maxlength: 1500,
+    },
+
+    companyType: {
+      type: String,
+      enum: [
+        "Startup",
+        "Agency",
+        "Enterprise",
+        "Individual",
+        "Government",
+        "NGO",
+      ],
+    },
+
+    industry: {
+      type: String,
+      enum: [
+        "Technology",
+        "Finance",
+        "Healthcare",
+        "Education",
+        "Gaming",
+        "Retail",
+        "Marketing",
+        "Construction",
+        "Other",
+      ],
+    },
+
+    foundedYear: {
+      type: Number,
+      default: 0
+    },
+
+    companySize: {
+      type: String,
+      enum: [
+        "1-10",
+        "11-50",
+        "51-200",
+        "201-500",
+        "500+",
+      ],
+    },
+
+    location: {
+      country: String,
+      state: String,
+      city: String,
+      address: String,
+    },
+
+    // ===========================
+    // CONTACT
+    // ===========================
+    contactPerson: {
+      name: String,
+      designation: String,
+      email: String,
+      phone: String,
+    },
+
+    // ===========================
+    // LINKS
+    // ===========================
+    portfolio: {
+      website: String,
+      linkedin: String,
+    },
+
+    socials: {
+      twitter: String,
+      github: String,
+      instagram: String,
+      facebook: String,
+    },
+
+    // ===========================
+    // HIRING
+    // ===========================
+    hiringPreferences: {
+      remoteOnly: {
+        type: Boolean,
+        default: false,
+      },
+
+      preferredExperienceLevel: {
+        type: String,
+        enum: ["Beginner", "Intermediate", "Expert"],
+      },
+
+      preferredLanguages: [String],
+    },
+
+    isHiring: {
+      type: Boolean,
+      default: true,
+    },
+
+    // ===========================
+    // PAYMENT
+    // ===========================
+    paymentDetails: {
+      provider: {
+        type: String,
+        enum: ["razorpay", "stripe"],
+      },
+
+      customerId: String,
+
+      defaultMethodId: String,
+    },
+
+    // ===========================
+    // RELATIONS
+    // ===========================
+    postedGigs: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Gig",
+      },
+    ],
+
+    activeContracts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Contract",
+      },
+    ],
+
+    savedFreelancers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    // ===========================
+    // REPUTATION
+    // ===========================
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
+    totalReviews: {
       type: Number,
       default: 0,
     },
-    totalSpent: {
+
+    totalRatings: {
       type: Number,
       default: 0,
     },
-    activeGigs: {
+
+    // ===========================
+    // ANALYTICS
+    // ===========================
+    stats: {
+      gigsPosted: {
+        type: Number,
+        default: 0,
+      },
+
+      activeProjects: {
+        type: Number,
+        default: 0,
+      },
+
+      completedProjects: {
+        type: Number,
+        default: 0,
+      },
+
+      freelancersHired: {
+        type: Number,
+        default: 0,
+      },
+
+      totalSpent: {
+        type: Number,
+        default: 0,
+      },
+
+      repeatHires: {
+        type: Number,
+        default: 0,
+      },
+    },
+
+    // ===========================
+    // ACCOUNT STATUS
+    // ===========================
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    profileCompletion: {
       type: Number,
       default: 0,
+      min: 0,
+      max: 100,
     },
   },
-
-  isVerified: {
-    type: Boolean,
-    default: false,
-  }, // verified client badge
-});
+  {
+    timestamps: true,
+  }
+);
 
 const adminSchema = new Schema({
   adminLevel: {
@@ -248,4 +423,7 @@ export const AdminProfile = mongoose.model("AdminProfile", adminSchema);
 
 export const ClientProfile = mongoose.model("ClientProfile", clientSchema);
 
-export const FreelancerProfile = mongoose.model("FreelancerProfile", freelancerSchema);
+export const FreelancerProfile = mongoose.model(
+  "FreelancerProfile",
+  freelancerSchema,
+);
