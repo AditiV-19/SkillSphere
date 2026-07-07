@@ -4,7 +4,7 @@ import { getProfile, updateProfile } from "../../services/api.js";
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import SectionCard from "../../components/profile/SectionCard";
-import EditProfileModal from "../../components/profile/EditProfileModal";
+import EditProfileModal from "./EditProfileModal";
 
 import { FaBriefcase, FaGithub, FaLinkedin } from "react-icons/fa";
 import {
@@ -76,7 +76,7 @@ export default function FreelancerProfile() {
 
   const fetchProfile = async () => {
     try {
-      const response = await getProfile();
+      const response = await getProfile('freelancer');
 
       setProfile(response.data);
     } catch (error) {

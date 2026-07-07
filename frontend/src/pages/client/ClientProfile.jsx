@@ -4,7 +4,6 @@ import { getProfile, updateProfile } from "../../services/api.js";
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import SectionCard from "../../components/profile/SectionCard";
-import EditProfileModal from "../../components/profile/EditProfileModal";
 
 import { FaBriefcase, FaGithub, FaLinkedin } from "react-icons/fa";
 import {
@@ -41,7 +40,7 @@ export default function ClientProfile() {
 
   const handleSubmit = async (formData) => {
     try {
-      const response = await updateProfile(formData);
+      const response = await updateProfile(formData, 'client');
 
       console.log("UPDATED PROFILE:", response.data);
 
@@ -58,7 +57,7 @@ export default function ClientProfile() {
 
   const fetchProfile = async () => {
     try {
-      const response = await getProfile();
+      const response = await getProfile('client');
 
       setProfile(response.data);
     } catch (error) {

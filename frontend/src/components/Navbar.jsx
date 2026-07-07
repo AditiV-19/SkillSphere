@@ -11,7 +11,7 @@ export default function Navbar() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const res = await getProfile();
+        const res = await getProfile(user.role);
         setProfile(res.data);
       } catch (err) {
         console.log(err);
