@@ -7,6 +7,8 @@ import clientRouter from './routes/client.route.js'
 
 import uploadRouter from './routes/uploadImage.route.js'
 
+import gigRouter from './routes/gig.route.js'
+
 const app = express()   //create an express app
 
 app.use(cors({
@@ -22,5 +24,6 @@ app.use("/api/v1/profile/client", clientRouter)
 // app.use("/api/v1/users/profile", freelancerRouter)
 app.use("/api/v1/users/upload", uploadRouter)
 // example route: http://localhost:4000/api/v1/users/register
+app.use("/api/v1/client/gig", gigRouter)
 
 export default app
