@@ -4,6 +4,10 @@ import React, { useState } from "react";
 import { MapPin, Phone } from "lucide-react";
 
 export default function ProfileHeader({ isEditing, setIsEditing, profile }) {
+
+  const user = localStorage.getItem('user')? JSON.parse(localStorage.getItem("user"))
+  : null;
+
   const locationText =
     typeof profile.location === "string"
       ? profile.location
@@ -125,12 +129,12 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile }) {
         </div>
 
         {/* Edit Button */}
-        <button
+        {user.role === 'freelancer' && (<button
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition font-medium"
           onClick={() => setIsEditing(true)}
         >
           {isEditing ? "Save Profile" : "Edit Profile"}
-        </button>
+        </button>)}
       </div>
 
       {/* Completion Bar */}

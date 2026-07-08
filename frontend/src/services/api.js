@@ -56,6 +56,8 @@ export const uploadResumeToServer = (file) => {
   });
 };
 
+
+//Gigs
 export const createGig = (gigData) => {
   return API.post(`/client/gig`, gigData);
 };
@@ -70,4 +72,14 @@ export const updateGig = (gigData, id) => {
 };
 export const deleteGig = (id) => {
   return API.delete(`/client/gig/${id}`);
+};
+
+
+//Browse Freelancer
+
+export const getAllFreelancers = () => {
+  return API.get("/profile/client/all-freelancers");
+};
+export const getFreelancerById = (id) => {
+  return API.get(`/profile/client/freelancer/${id}`);
 };

@@ -162,3 +162,87 @@ export const deleteProfile = async (req, res) => {
 
   }
 };
+
+export const getAllFreelancers = async (req, res) => {
+    try {
+        const freelancers = await FreelancerProfile.find()
+            .populate("user", "username email role isVerified") 
+            .sort({ createdAt: -1 }); // Show newest profiles first
+
+        const normalizedFreelancers = freelancers.map(profile => {
+            const profileObj = profile.toObject();
+            return {
+                ...profileObj,
+                username: profileObj.user?.username || profileObj.username,
+                email: profileObj.user?.email,
+                role: profileObj.user?.role
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            freelancers: normalizedFreelancers
+        });
+    } catch (error) {
+        console.error("Error retrieving freelancer directory matrices:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error reading active talent pipelines.",
+            error: error.message
+        });
+    }
+};
+
+// ==========================================
+// FETCH SINGLE FREELANCER DETAILS BY ID
+// ==========================================
+export const getFreelancerById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Locate the freelancer document by its ID and pull owner details
+    const freelancer = await FreelancerProfile.findById(id).populate(
+      "user",
+      "name username email createdAt"
+    );
+
+    // 2. Fail fast if the profile doesn't exist
+    if (!freelancer) {
+      return res.status(404).json({
+        success: false,
+        message: "The requested freelancer profile index could not be located.",
+      });
+    }
+
+    // 3. Flatten properties cleanly for your frontend layouts
+    const profileObj = freelancer.toObject();
+    const normalizedProfile = {
+      ...profileObj,
+      name: profileObj.user?.name || profileObj.name || "Independent Professional",
+      username: profileObj.user?.username || profileObj.username || "professional",
+      email: profileObj.user?.email || "",
+      memberSince: profileObj.user?.createdAt ? new Date(profileObj.user.createdAt).getFullYear() : "Recent"
+    };
+
+    return res.status(200).json({
+      success: true,
+      freelancer: normalizedProfile,
+    });
+  } catch (error) {
+    console.error("Error in getFreelancerById controller:", error);
+    
+    // Catch invalid MongoDB format casts safely (e.g. random letters passed as id strings)
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid profile ID parameter formatting configuration.",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error retrieving developer profile records.",
+      error: error.message,
+    });
+  }
+};

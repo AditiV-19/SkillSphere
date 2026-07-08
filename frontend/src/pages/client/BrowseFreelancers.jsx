@@ -1,0 +1,276 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { 
+  Search, 
+  MapPin, 
+  Star, 
+  IndianRupee, 
+  SlidersHorizontal, 
+  CheckCircle2, 
+  ArrowRight,
+  AlertCircle
+} from "lucide-react";
+import { getAllFreelancers } from "../../services/api"; 
+import DashboardLayout from "../../components/dashboard/DashboardLayout";
+
+export default function BrowseFreelancers() {
+  const navigate = useNavigate();
+
+  // Master Network Content States
+  const [freelancers, setFreelancers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  
+  // Filtering States
+  const [search, setSearch] = useState("");
+  const [activeDomain, setActiveDomain] = useState("all"); 
+  const [selectedTier, setSelectedTier] = useState("all"); 
+
+  useEffect(() => {
+    fetchFreelancerProfiles();
+  }, []);
+
+  const fetchFreelancerProfiles = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      const res = await getAllFreelancers();
+      
+      let dataPayload = [];
+
+      // Layered fallback parsing to capture any backend return structure securely
+      if (res?.data) {
+        if (Array.isArray(res.data)) {
+          dataPayload = res.data;
+        } else if (res.data.freelancers && Array.isArray(res.data.freelancers)) {
+          dataPayload = res.data.freelancers;
+        } else if (res.data.data && Array.isArray(res.data.data)) {
+          dataPayload = res.data.data; 
+        } else if (res.data.profiles && Array.isArray(res.data.profiles)) {
+          dataPayload = res.data.profiles;
+        }
+      }
+      
+      setFreelancers(dataPayload);
+    } catch (err) {
+      // 🔍 DEBUG ACTION: Prints the precise network error signature right into the browser console
+      console.error("Axios Discovery Failure Exception Stack:", err);
+      
+      const serverMessage = err.response?.data?.message || err.message;
+      setError(`Failed to stream live freelancer records: ${serverMessage} (Status ${err.response?.status || 'Network Error'})`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Dynamic live search/filter logic processing
+  const filteredFreelancers = freelancers.filter((fl) => {
+    const nameLower = fl.name?.toLowerCase() || fl.username?.toLowerCase() || "";
+    const titleLower = fl.title?.toLowerCase() || "";
+    const bioLower = fl.bio?.toLowerCase() || "";
+    const searchLower = search.toLowerCase();
+    
+    const skillsArray = Array.isArray(fl.skills) ? fl.skills : [];
+    const matchesSkills = skillsArray.some(s => String(s).toLowerCase().includes(searchLower));
+
+    const matchesSearch = 
+      nameLower.includes(searchLower) ||
+      titleLower.includes(searchLower) ||
+      bioLower.includes(searchLower) ||
+      matchesSkills;
+
+    const candidateCategory = fl.category?.toLowerCase() || "";
+    const matchesDomain = activeDomain === "all" || candidateCategory === activeDomain.toLowerCase();
+    const matchesTier = selectedTier === "all" || fl.experienceLevel === selectedTier;
+
+    return matchesSearch && matchesDomain && matchesTier;
+  });
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 min-h-screen bg-slate-50/50 flex items-center justify-center text-slate-500 font-medium text-sm">
+          Streaming active marketplace developer indexes...
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="p-8 bg-slate-50/50 min-h-screen">
+        
+        {/* Header Block Module */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 pb-4 border-b border-slate-200/60">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Discover Talent</h1>
+              <span className="bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 rounded-md border border-emerald-100 uppercase tracking-wide">
+                Live Database Feed
+              </span>
+            </div>
+            <p className="text-slate-500 mt-1.5 text-sm">
+              Source, evaluate, and hire independent professionals verified across your network.
+            </p>
+          </div>
+
+          {/* Tab View Filter */}
+          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 self-start md:self-center">
+            {["All", "Development", "Design", "AI"].map((domain) => (
+              <button
+                key={domain}
+                onClick={() => setActiveDomain(domain.toLowerCase())}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition-all capitalize ${
+                  activeDomain === domain.toLowerCase() 
+                    ? "bg-white text-slate-800 shadow-sm border border-slate-200/60" 
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {domain}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl p-4 mb-6 flex items-center gap-3">
+            <AlertCircle className="shrink-0 text-rose-500" size={18} />
+            <p className="font-medium">{error}</p>
+          </div>
+        )}
+
+        {/* Unified Search & Multi-Parameter Filter Row */}
+        <div className="grid grid-cols-12 gap-4 mb-8">
+          <div className="col-span-12 md:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 flex items-center">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-2.5 text-blue-500" size={18} />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by names, core competencies, or tech stacks..."
+                className="w-full bg-slate-50/50 text-slate-800 rounded-xl pl-10 pr-4 py-2 outline-none border border-slate-200 text-sm transition focus:border-blue-500 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          <div className="col-span-12 md:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 flex items-center gap-3">
+            <SlidersHorizontal size={16} className="text-slate-400 shrink-0" />
+            <select
+              value={selectedTier}
+              onChange={(e) => setSelectedTier(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer transition focus:border-blue-500"
+            >
+              <option value="all">All Experience Levels</option>
+              <option value="Expert">Expert Tier</option>
+              <option value="Intermediate">Intermediate Tier</option>
+              <option value="Beginner">Beginner Tier</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Discovery Feed Column Container */}
+        <div className="space-y-4">
+          {filteredFreelancers.map((fl) => (
+            <div
+              key={fl._id}
+              className="group bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:border-blue-200 relative overflow-hidden"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-blue-600 transition-all duration-300" />
+              
+              <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                <div className="space-y-2 flex-1">
+                  
+                  {/* Status pills */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-md uppercase tracking-wide">
+                      {fl.experienceLevel || "General"} Tier
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100">
+                      <Star size={12} className="fill-amber-500 text-amber-500" />
+                      {(fl.rating || 5.0).toFixed(1)} ({fl.reviewCount || 0} reviews)
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors duration-200">
+                      {fl.name || fl.username}
+                    </h2>
+                    <p className="text-sm font-semibold text-slate-500 mt-0.5">{fl.title || "Independent Professional"}</p>
+                  </div>
+
+                  <p className="text-xs text-slate-500 max-w-3xl leading-relaxed font-medium pt-1 line-clamp-2">
+                    {fl.bio || "No summary profile provided yet."}
+                  </p>
+                </div>
+
+                {/* Routing Link to Freelancer Specific Profile */}
+                <div className="w-full md:w-auto self-stretch md:self-center flex items-center justify-end shrink-0">
+                  <button 
+                    onClick={() => navigate(`/client/freelancer/${fl._id}`)}
+                    className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-semibold px-5 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-sm"
+                  >
+                    <span>View Profile</span>
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Technical Skill Tags list */}
+              {fl.skills && fl.skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-slate-100 items-center">
+                  {fl.skills.map((skill, index) => (
+                    <span 
+                      key={index} 
+                      className="bg-slate-50 border border-slate-200/60 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-lg"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Footnote Metadata Metrics Panel */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-100 text-sm font-medium text-slate-600">
+                <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                  <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                    <IndianRupee size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">Hourly Rate</p>
+                    <p className="text-slate-700 font-bold text-xs truncate">₹{fl.hourlyRate || 0}/hr</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                  <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
+                    <MapPin size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">Location</p>
+                    <p className="text-slate-700 font-bold text-xs truncate">
+                      {fl.location?.remote ? "Remote Network" : fl.location?.city || "Local"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          ))}
+
+          {filteredFreelancers.length === 0 && (
+            <div className="text-center py-16 bg-white border border-dashed border-slate-300 rounded-2xl p-8 shadow-sm">
+              <div className="inline-flex p-4 bg-slate-50 text-slate-400 rounded-full mb-4">
+                <CheckCircle2 size={32} />
+              </div>
+              <h4 className="text-base font-bold text-slate-800">No developer parameters match</h4>
+              <p className="text-slate-500 text-sm mt-1 max-w-sm mx-auto">
+                No verified records found in the database match your chosen search terms or experience tiers.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
