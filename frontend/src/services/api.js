@@ -68,4 +68,6 @@ export const getGigById = (id) => {
 export const updateGig = (gigData, id) => {
   return API.put(`/client/gig/${id}`, gigData);
 };
-
+export const deleteGig = (id) => {
+  return API.delete(`/client/gig/${id}`);
+};

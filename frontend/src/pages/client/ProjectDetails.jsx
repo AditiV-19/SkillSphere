@@ -14,9 +14,10 @@ import {
   Save,
   X,
   Star,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from "lucide-react";
-import { getGigById, updateGig } from "../../services/api"; 
+import { getGigById, updateGig, deleteGig } from "../../services/api"; // ✅ Ensure deleteGig is imported
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 
 export default function ProjectDetails() {
@@ -39,6 +40,10 @@ export default function ProjectDetails() {
   const [editMaxBudget, setEditMaxBudget] = useState("");
   const [editDuration, setEditDuration] = useState("");
 
+  // 🚀 NEW: State to manage the delete confirmation modal/step
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     fetchProjectDetails();
   }, [id]);
@@ -50,7 +55,6 @@ export default function ProjectDetails() {
       const data = res?.data?.gig || res?.data || null;
       setGig(data);
       
-      // Seed values into edit forms ahead of time
       if (data) {
         setEditTitle(data.title || "");
         setEditDescription(data.description || "");
@@ -67,10 +71,8 @@ export default function ProjectDetails() {
     }
   };
 
-  // Toggle Edit View
   const handleEditToggle = () => {
     if (isEditing) {
-      // If cancelling, reset values back to current loaded gig data
       setEditTitle(gig.title || "");
       setEditDescription(gig.description || "");
       setEditCategory(gig.category || "Web Development");
@@ -83,7 +85,6 @@ export default function ProjectDetails() {
     setSuccessMsg("");
   };
 
-  // Submit Updated Changes Payload
   const handleSaveChanges = async () => {
     setError("");
     setSuccessMsg("");
@@ -106,20 +107,31 @@ export default function ProjectDetails() {
     };
 
     try {
-      // Trigger your API update service call passing the payload and id
       await updateGig(updatedPayload, id);
-      
-      // Update local state smoothly so the UI updates immediately
-      setGig({
-        ...gig,
-        ...updatedPayload
-      });
-      
+      setGig({ ...gig, ...updatedPayload });
       setSuccessMsg("Project metrics rewritten and synchronized successfully.");
       setIsEditing(false);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to commit local project adjustments over the network.");
       console.error(err);
+    }
+  };
+
+  // 🚀 NEW: Delete Submission Handler
+  const handleDeleteProject = async () => {
+    try {
+      setDeleting(true);
+      setError("");
+      
+      await deleteGig(id); // Calls your backend DELETE /api/gig/:id route
+      
+      // Redirect seamlessly back to the main layout tracking dashboard
+      navigate("/client/projects"); 
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to discard the project document from the server.");
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -141,7 +153,7 @@ export default function ProjectDetails() {
             <AlertCircle className="text-rose-500 mx-auto mb-3" size={32} />
             <h4 className="text-base font-bold text-slate-800">Workspace Error</h4>
             <p className="text-slate-500 text-sm mt-1">{error}</p>
-            <button onClick={() => navigate("/my-projects")} className="mt-4 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-semibold">
+            <button onClick={() => navigate("/client/projects")} className="mt-4 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-semibold">
               Return to Dashboard
             </button>
           </div>
@@ -156,7 +168,7 @@ export default function ProjectDetails() {
         
         {/* Navigation Breadcrumb */}
         <button 
-          onClick={() => navigate("/client/projects")} 
+          onClick={() => navigate("/my-projects")} 
           className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-blue-600 transition mb-6 uppercase tracking-wider"
         >
           <ChevronLeft size={16} />
@@ -176,6 +188,37 @@ export default function ProjectDetails() {
           </div>
         )}
 
+        {/* 🚀 NEW: Inline Delete Confirmation Alert Banner */}
+        {showDeleteConfirm && (
+          <div className="bg-amber-50 border-2 border-amber-200 text-slate-800 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-xs animate-fade-in">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={20} />
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">Confirm Project Deletion</h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Are you sure you want to discard this job posting? This action removes all deliverables and active incoming proposals.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+              <button 
+                onClick={handleDeleteProject}
+                disabled={deleting}
+                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-xs disabled:opacity-50"
+              >
+                {deleting ? "Removing..." : "Yes, Delete"}
+              </button>
+              <button 
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold px-3 py-2 rounded-xl transition shadow-2xs"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Context Dynamic Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8 pb-4 border-b border-slate-200/60">
           <div className="flex-1">
@@ -185,7 +228,7 @@ export default function ProjectDetails() {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="bg-white border border-slate-200 font-extrabold text-2xl text-slate-800 tracking-tight rounded-xl p-2 w-full max-w-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+                  className="bg-white border border-slate-200 font-extrabold text-2xl text-slate-800 tracking-tight rounded-xl p-2 w-full max-w-xl outline-none focus:border-blue-500"
                 />
               ) : (
                 <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">{gig.title}</h1>
@@ -202,7 +245,7 @@ export default function ProjectDetails() {
           </div>
 
           {/* Action Control Trigger Group */}
-          <div className="flex items-center gap-3 self-start lg:self-center">
+          <div className="flex items-center gap-3 flex-wrap self-start lg:self-center">
             {isEditing ? (
               <>
                 <button 
@@ -221,13 +264,25 @@ export default function ProjectDetails() {
                 </button>
               </>
             ) : (
-              <button 
-                onClick={handleEditToggle}
-                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition"
-              >
-                <Edit3 size={14} />
-                <span>Edit Project</span>
-              </button>
+              <>
+                <button 
+                  onClick={handleEditToggle}
+                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition"
+                >
+                  <Edit3 size={14} />
+                  <span>Edit Project</span>
+                </button>
+                
+                {/* 🚀 NEW: Delete Button Element */}
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-1.5 bg-white border border-slate-200 hover:border-rose-200 text-slate-500 hover:text-rose-600 text-xs font-bold px-3 py-2.5 rounded-xl transition shadow-2xs"
+                  title="Delete project posting"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
+              </>
             )}
 
             <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
@@ -269,7 +324,7 @@ export default function ProjectDetails() {
                   )}
                 </div>
 
-                {/* 🚀 NEW: Project Documentation/Attachments Section */}
+                {/* Project Documentation/Attachments Section */}
                 <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attached Documentation</h3>
                   {gig.attachments && gig.attachments.length > 0 ? (
@@ -285,7 +340,6 @@ export default function ProjectDetails() {
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="p-1.5 rounded-lg bg-white border border-slate-200 hover:border-blue-500 text-slate-400 hover:text-blue-600 shadow-2xs transition shrink-0 ml-2"
-                            title="Open file in new tab"
                           >
                             <ExternalLink size={14} />
                           </a>
@@ -351,10 +405,10 @@ export default function ProjectDetails() {
             )}
           </div>
 
-          {/* RIGHT SIDEBAR: Sub-Card Grid Matrix Component format */}
+          {/* RIGHT SIDEBAR: Sub-Card Grid Matrix */}
           <div className="col-span-12 lg:col-span-4 space-y-4">
             
-            {/* Sub-Card 1: Budget Scale */}
+            {/* Budget Scale */}
             <div className="flex items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm font-medium text-slate-600">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
                 <IndianRupee size={16} />
@@ -375,7 +429,7 @@ export default function ProjectDetails() {
               </div>
             </div>
 
-            {/* Sub-Card 2: Timeline */}
+            {/* Timeline */}
             <div className="flex items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm font-medium text-slate-600">
               <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 shrink-0">
                 <Clock size={16} />
@@ -390,7 +444,7 @@ export default function ProjectDetails() {
               </div>
             </div>
 
-            {/* Sub-Card 3: Environment */}
+            {/* Environment */}
             <div className="flex items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm font-medium text-slate-600">
               <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
                 <MapPin size={16} />
@@ -403,7 +457,7 @@ export default function ProjectDetails() {
               </div>
             </div>
 
-            {/* Sub-Card 4: Rating Cap */}
+            {/* Rating Cap */}
             <div className="flex items-center gap-2 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm font-medium text-slate-600">
               <div className="p-1.5 rounded-lg bg-amber-50 text-amber-500 shrink-0">
                 <Star size={16} className="fill-amber-500" />
