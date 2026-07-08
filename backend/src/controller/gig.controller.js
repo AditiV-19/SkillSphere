@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
 import { Gig } from "../models/gig.model.js";
 import { ClientProfile } from "../models/profile.model.js";
-
 // ==========================================
-// 1. CREATE GIG
+// 1. CREATE GIG (CONSOLIDATED & CLEANED)
 // ==========================================
 export const createGig = async (req, res) => {
   try {
@@ -13,11 +12,13 @@ export const createGig = async (req, res) => {
 
     if (!clientProfile) {
       return res.status(403).json({
+        success: false,
         message: "Access Denied. Only registered clients can create gigs.",
       });
     }
 
-    const {
+    // 1. Pull values from req.body ONCE
+    let {
       title,
       description,
       category,
@@ -32,32 +33,88 @@ export const createGig = async (req, res) => {
       longitude,
     } = req.body;
 
+    // 🚀 2. ADAPTIVE PARSING FOR BUDGET
+    if (budget) {
+      if (typeof budget === "string") {
+        try {
+          budget = JSON.parse(budget);
+        } catch (e) {
+          console.error("❌ Multer caught invalid budget string formatting:", budget);
+          return res.status(400).json({
+            success: false,
+            message: "Invalid budget payload format configuration.",
+          });
+        }
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required contract budget data structure metrics.",
+      });
+    }
+
+    // 🚀 3. ADAPTIVE PARSING FOR MILESTONES
+    if (milestones && typeof milestones === "string") {
+      try {
+        milestones = JSON.parse(milestones);
+      } catch (e) {
+        milestones = [];
+      }
+    }
+    const cleanMilestones = Array.isArray(milestones) ? milestones : [];
+
+    // 🚀 4. ADAPTIVE PARSING FOR SKILLS
+    if (skillsRequired && typeof skillsRequired === "string") {
+      try {
+        skillsRequired = JSON.parse(skillsRequired);
+      } catch (e) {
+        skillsRequired = skillsRequired
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+    const cleanSkills = Array.isArray(skillsRequired) ? skillsRequired : [skillsRequired];
+
+    // 5. EXTRACT FILES STREAM FROM MULTI-PART ENVELOPE
+    let attachments = [];
+    if (req.files && req.files.length > 0) {
+      attachments = req.files.map((file) => ({
+        url: file.path || file.secure_url, 
+        name: file.originalname,
+      }));
+    }
+
+    // 6. BUILD GEOGRAPHIC INTERACTION METRICS
+    const isRemote = remote === "true" || remote === true; // Handle form checkbox evaluations safely
     const locationData = {
-      remote: remote ?? true,
-      city: remote ? undefined : city,
-      state: remote ? undefined : state,
-      country: remote ? undefined : country,
+      remote: isRemote,
+      city: isRemote ? undefined : city,
+      state: isRemote ? undefined : state,
+      country: isRemote ? undefined : country,
     };
 
-    if (!remote && latitude && longitude) {
+    if (!isRemote && latitude && longitude) {
       locationData.geo = {
         type: "Point",
         coordinates: [parseFloat(longitude), parseFloat(latitude)],
       };
     }
 
+    // 7. DEPLOY SINGLE TRANSACT WRITE OPERATION TO MONGO
     const newGig = await Gig.create({
-            client: clientProfile._id,
-            title,
-            description,
-            category,
-            // Guard array parameters securely
-            skillsRequired: Array.isArray(skillsRequired) ? skillsRequired : [skillsRequired],
-            budget,
-            milestones: milestones && milestones !== "" ? milestones : [],
-            location: locationData, // ✅ Fixed: Passing the clean operational object
-        });
+      client: clientProfile._id,
+      title,
+      description,
+      category,
+      skillsRequired: cleanSkills,
+      budget,
+      milestones: cleanMilestones,
+      location: locationData,
+      attachments, // ✅ FIXED: Included document links inside database create transaction
+    });
 
+    // 8. UPDATE CLIENT PROFILE TRACKER ARCHITECTURE
     clientProfile.postedGigs.push(newGig._id);
     await clientProfile.save();
 

@@ -134,6 +134,12 @@ const gigSchema = new Schema(
       type: Number,
       default: 0,
     },
+    attachments: [
+    {
+      url: { type: String, required: true },
+      name: { type: String, required: true }
+    }
+  ],
   },
   {
     timestamps: true,
