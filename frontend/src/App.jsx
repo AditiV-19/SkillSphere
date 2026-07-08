@@ -11,6 +11,8 @@ import Dashboards from './pages/Dashboards'
 import Profile from "./pages/Profile"
 import GigMarketplace from './pages/GigMarketplace'
 import PostProject from './pages/client/PostProject'
+import MyProjects from './pages/client/MyProjects'
+import ProjectDetails from './pages/client/ProjectDetails'
 
 export default function App(){
 
@@ -86,6 +88,16 @@ export default function App(){
             <Route path="/client/post-project" element={
                 <ProtectedRoute allowedRoles={["client"]}>
                     <PostProject />
+                </ProtectedRoute>
+            } />
+            <Route path="/client/projects" element={
+                <ProtectedRoute allowedRoles={["client"]}>
+                    <MyProjects />
+                </ProtectedRoute>
+            } />
+            <Route path="/client/projects/:id" element={
+                <ProtectedRoute allowedRoles={["client"]}>
+                    <ProjectDetails />
                 </ProtectedRoute>
             } />
            
