@@ -13,9 +13,10 @@ import {
   Edit3,
   Save,
   X,
-  Star
+  Star,
+  ExternalLink
 } from "lucide-react";
-import { getGigById, updateGig } from "../../services/api"; // ✅ Ensure updateGig is imported
+import { getGigById, updateGig } from "../../services/api"; 
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 
 export default function ProjectDetails() {
@@ -268,6 +269,34 @@ export default function ProjectDetails() {
                   )}
                 </div>
 
+                {/* 🚀 NEW: Project Documentation/Attachments Section */}
+                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attached Documentation</h3>
+                  {gig.attachments && gig.attachments.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {gig.attachments.map((file, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs transition-all hover:bg-slate-100/70 group">
+                          <div className="flex items-center gap-2.5 font-semibold text-slate-700 min-w-0">
+                            <FileText size={16} className="text-blue-500 shrink-0" />
+                            <span className="truncate group-hover:text-blue-600 transition-colors">{file.name || `Document_${idx + 1}`}</span>
+                          </div>
+                          <a 
+                            href={file.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="p-1.5 rounded-lg bg-white border border-slate-200 hover:border-blue-500 text-slate-400 hover:text-blue-600 shadow-2xs transition shrink-0 ml-2"
+                            title="Open file in new tab"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 font-medium italic">No specifications or media files uploaded for this project.</p>
+                  )}
+                </div>
+
                 {/* Editable Domain Category Dropdown */}
                 {isEditing && (
                   <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-3">
@@ -303,7 +332,7 @@ export default function ProjectDetails() {
                           <span className="bg-blue-50 text-blue-600 text-xs px-2.5 py-0.5 rounded font-bold">M{idx + 1}</span>
                           <span>{ms.name}</span>
                         </div>
-                        <span className="font-extrabold text-slate-800">${ms.amount}</span>
+                        <span className="font-extrabold text-slate-800">₹{ms.amount}</span>
                       </div>
                     ))}
                   </div>
@@ -322,7 +351,7 @@ export default function ProjectDetails() {
             )}
           </div>
 
-          {/* RIGHT SIDEBAR: Restored back to the Sub-Card Grid Matrix Component format */}
+          {/* RIGHT SIDEBAR: Sub-Card Grid Matrix Component format */}
           <div className="col-span-12 lg:col-span-4 space-y-4">
             
             {/* Sub-Card 1: Budget Scale */}
@@ -340,7 +369,7 @@ export default function ProjectDetails() {
                 ) : (
                   <p className="text-slate-700 font-bold text-xs truncate">
                     {gig.budget?.budgetType === "hourly" ? "Hourly" : "Fixed"}{" "}
-                    <span className="font-normal text-slate-500">(${gig.budget?.min || 0}-${gig.budget?.max || 0})</span>
+                    <span className="font-normal text-slate-500">(₹{gig.budget?.min || 0}-₹{gig.budget?.max || 0})</span>
                   </p>
                 )}
               </div>
