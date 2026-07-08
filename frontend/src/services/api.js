@@ -57,7 +57,7 @@ export const uploadResumeToServer = (file) => {
 };
 
 export const createGig = (gigData) => {
-  return API.post(`/client/gig`);
+  return API.post(`/client/gig`, gigData);
 };
 export const getGigs = () => {
   return API.get(`/client/gig`);
