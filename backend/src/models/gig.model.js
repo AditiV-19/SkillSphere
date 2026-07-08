@@ -96,7 +96,7 @@ const gigSchema = new Schema(
       },
       // GeoJSON Point format for advanced location-based queries
       geo: {
-        type: { type: String, enum: ["Point"], default: "Point" },
+        type: { type: String, enum: ["Point"] },
         coordinates: { type: [Number] },
       },
     },
@@ -141,7 +141,7 @@ const gigSchema = new Schema(
 );
 
 // Enable Geospatial Queries for Hyperlocal Search [cite: 3, 107]
-gigSchema.index({ "location.geo": "2dsphere" });
+gigSchema.index({ "location.geo": "2dsphere" }, { sparse: true});
 
 // Compound text index to handle advanced string matches on Title and Skills
 gigSchema.index({ skillsRequired: 1 });
