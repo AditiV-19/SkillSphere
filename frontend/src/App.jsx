@@ -9,6 +9,8 @@ import VerifyEmail from "./pages/auth/VerifyEmail"
 import ProtectedRoute from './components/ProtectedRoute'
 import Dashboards from './pages/Dashboards'
 import Profile from "./pages/Profile"
+import GigMarketplace from './pages/GigMarketplace'
+import PostProject from './pages/client/PostProject'
 
 export default function App(){
 
@@ -80,7 +82,16 @@ export default function App(){
                     <Profile />
                 </ProtectedRoute>
             } />
+
+            <Route path="/client/post-project" element={
+                <ProtectedRoute allowedRoles={["client"]}>
+                    <PostProject />
+                </ProtectedRoute>
+            } />
            
+            <Route path="/client/marketplace" element={
+                <GigMarketplace />
+            } />
             
            
 

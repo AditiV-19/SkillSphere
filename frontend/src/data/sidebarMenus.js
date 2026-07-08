@@ -1,141 +1,140 @@
 import {
-    FaHome,
-    FaUser,
-    FaBriefcase,
-    FaSearch,
-    FaClipboardList,
-    FaComments,
-    FaCog,
-    FaUsers,
-    FaChartBar,
-    FaFlag,
-    FaPlusCircle
+  FaHome,
+  FaUser,
+  FaBriefcase,
+  FaSearch,
+  FaClipboardList,
+  FaComments,
+  FaCog,
+  FaUsers,
+  FaChartBar,
+  FaFlag,
+  FaPlusCircle,
+  FaTasks,
+  
 } from "react-icons/fa";
 
 export const sidebarMenus = {
+  freelancer: [
+    {
+      label: "Dashboard",
+      icon: FaHome,
+      route: "/freelancer/dashboard",
+    },
 
-    freelancer: [
+    {
+      label: "My Profile",
+      icon: FaUser,
+      route: "/freelancer/profile",
+    },
 
-        {
-            label: "Dashboard",
-            icon: FaHome,
-            route: "/freelancer/dashboard"
-        },
+    {
+      label: "My Gigs",
+      icon: FaBriefcase,
+      route: "/freelancer/gigs",
+    },
 
-        {
-            label: "My Profile",
-            icon: FaUser,
-            route: "/freelancer/profile"
-        },
+    {
+      label: "Marketplace",
+      icon: FaBriefcase,
+      route: "/client/marketplace",
+    },
 
-        {
-            label: "My Gigs",
-            icon: FaBriefcase,
-            route: "/freelancer/gigs"
-        },
+    {
+      label: "Applications",
+      icon: FaClipboardList,
+      route: "/applications",
+    },
 
-        {
-            label: "Browse Gigs",
-            icon: FaSearch,
-            route: "/browse-gigs"
-        },
+    {
+      label: "Messages",
+      icon: FaComments,
+      route: "/messages",
+    },
 
-        {
-            label: "Applications",
-            icon: FaClipboardList,
-            route: "/applications"
-        },
+    {
+      label: "Settings",
+      icon: FaCog,
+      route: "/settings",
+    },
+  ],
 
-        {
-            label: "Messages",
-            icon: FaComments,
-            route: "/messages"
-        },
+  client: [
+    {
+      label: "Dashboard",
+      icon: FaHome,
+      route: "/client/dashboard",
+    },
+    {
+      label: "My Profile",
+      icon: FaUser,
+      route: "/client/profile",
+    },
+    {
+      label: "Marketplace",
+      icon: FaBriefcase,
+      route: "/client/marketplace",
+    },
+    {
+      label: "Post Project",
+      icon: FaPlusCircle,
+      route: "/client/post-project",
+    },
 
-        {
-            label: "Settings",
-            icon: FaCog,
-            route: "/settings"
-        }
+    {
+      label: "My Projects",
+      icon: FaTasks,
+      route: "/client/projects",
+    },
 
-    ],
+    {
+      label: "Browse Freelancers",
+      icon: FaSearch,
+      route: "/client/browse",
+    },
 
-    client: [
+    {
+      label: "Messages",
+      icon: FaComments,
+      route: "/messages",
+    },
 
-        {
-            label: "Dashboard",
-            icon: FaHome,
-            route: "/client/dashboard"
-        },
-        {
-            label: "My Profile",
-            icon: FaUser,
-            route: "/client/profile"
-        },
-        {
-            label: "Post Project",
-            icon: FaPlusCircle,
-            route: "/client/post-project"
-        },
+    {
+      label: "Settings",
+      icon: FaCog,
+      route: "/settings",
+    },
+  ],
 
-        {
-            label: "My Projects",
-            icon: FaBriefcase,
-            route: "/client/projects"
-        },
+  admin: [
+    {
+      label: "Dashboard",
+      icon: FaHome,
+      route: "/admin/dashboard",
+    },
 
-        {
-            label: "Browse Freelancers",
-            icon: FaSearch,
-            route: "/client/browse"
-        },
+    {
+      label: "Users",
+      icon: FaUsers,
+      route: "/admin/users",
+    },
 
-        {
-            label: "Messages",
-            icon: FaComments,
-            route: "/messages"
-        },
+    {
+      label: "Analytics",
+      icon: FaChartBar,
+      route: "/admin/analytics",
+    },
 
-        {
-            label: "Settings",
-            icon: FaCog,
-            route: "/settings"
-        }
+    {
+      label: "Reports",
+      icon: FaFlag,
+      route: "/admin/reports",
+    },
 
-    ],
-
-    admin: [
-
-        {
-            label: "Dashboard",
-            icon: FaHome,
-            route: "/admin/dashboard"
-        },
-
-        {
-            label: "Users",
-            icon: FaUsers,
-            route: "/admin/users"
-        },
-
-        {
-            label: "Analytics",
-            icon: FaChartBar,
-            route: "/admin/analytics"
-        },
-
-        {
-            label: "Reports",
-            icon: FaFlag,
-            route: "/admin/reports"
-        },
-
-        {
-            label: "Settings",
-            icon: FaCog,
-            route: "/settings"
-        }
-
-    ]
-
+    {
+      label: "Settings",
+      icon: FaCog,
+      route: "/settings",
+    },
+  ],
 };

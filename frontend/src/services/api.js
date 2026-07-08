@@ -55,3 +55,17 @@ export const uploadResumeToServer = (file) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
+
+export const createGig = (gigData) => {
+  return API.post(`/client/gig`);
+};
+export const getGigs = () => {
+  return API.get(`/client/gig`);
+};
+export const getGigById = (id) => {
+  return API.get(`/client/gig/${id}`);
+};
+export const updateGig = (gigData, id) => {
+  return API.put(`/client/gig/${id}`, gigData);
+};
+
