@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  getGigById,
-  submitGigProposal,
-} from "../../services/api.js";
+import { getGigById, submitGigProposal } from "../../services/api.js";
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import {
   ChevronLeft,
@@ -26,7 +23,7 @@ export default function GigDetails() {
   const [error, setError] = useState("");
 
   // 💡 MOCK ROLE CHECK: Replace this with your actual Auth State / Context later
-  const [userRole, setUserRole] = useState("freelancer"); 
+  const [userRole, setUserRole] = useState("freelancer");
 
   const [isInvited, setIsInvited] = useState(false);
   const user = JSON.parse(localStorage.getItem("user")) || "";
@@ -75,7 +72,7 @@ export default function GigDetails() {
       await submitGigProposal(gigId, proposalForm);
       alert("Application sent successfully!");
       setShowApplyForm(false);
-      navigate("/freelancer/invitations"); 
+      navigate("/freelancer/invitations");
     } catch (err) {
       alert(
         err.response?.data?.message || "Application submission broke down.",
@@ -159,7 +156,8 @@ export default function GigDetails() {
 
               <div className="pt-2">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-2">
-                  <FileText size={16} className="text-blue-500" /> Project Description
+                  <FileText size={16} className="text-blue-500" /> Project
+                  Description
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                   {gig.description || "No project description provided."}
@@ -228,7 +226,7 @@ export default function GigDetails() {
                     </button>
                     {isInvited && (
                       <button
-                        onClick={() => navigate(-1)} 
+                        onClick={() => navigate(-1)}
                         className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition"
                       >
                         <XCircle size={14} />
@@ -295,7 +293,10 @@ export default function GigDetails() {
                 rows={4}
                 value={proposalForm.description}
                 onChange={(e) =>
-                  setProposalForm({ ...proposalForm, description: e.target.value })
+                  setProposalForm({
+                    ...proposalForm,
+                    description: e.target.value,
+                  })
                 }
                 className="w-full border border-slate-200 outline-none p-2.5 rounded-xl text-sm focus:border-blue-500 transition"
                 placeholder="Explain your technical strategy..."
@@ -312,7 +313,10 @@ export default function GigDetails() {
                   required
                   value={proposalForm.bidAmount}
                   onChange={(e) =>
-                    setProposalForm({ ...proposalForm, bidAmount: e.target.value })
+                    setProposalForm({
+                      ...proposalForm,
+                      bidAmount: e.target.value,
+                    })
                   }
                   className="w-full border border-slate-200 outline-none p-2.5 rounded-xl text-sm focus:border-blue-500 transition"
                 />
@@ -327,7 +331,10 @@ export default function GigDetails() {
                   placeholder="e.g., 2 weeks"
                   value={proposalForm.estimatedTime}
                   onChange={(e) =>
-                    setProposalForm({ ...proposalForm, estimatedTime: e.target.value })
+                    setProposalForm({
+                      ...proposalForm,
+                      estimatedTime: e.target.value,
+                    })
                   }
                   className="w-full border border-slate-200 outline-none p-2.5 rounded-xl text-sm focus:border-blue-500 transition"
                 />

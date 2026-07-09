@@ -94,8 +94,17 @@ export const getFreelancerInvitations = () => {
   return API.get("/client/gig/freelancer/invitations");
 };
 
-// Apply to gig
 
+// Apply to gig/ Gig Proposals
 export const submitGigProposal = (gigId, proposalData) => {
   return API.post(`/client/gig/${gigId}/apply`, proposalData);
+};
+export const updateFreelancerProposal = (proposalId, updatedData) => {
+  return API.put(`/client/gig/proposals/${proposalId}`, updatedData);
+};
+export const getFreelancerApplications = () => {
+  return API.get("/client/gig/freelancer/applications/all"); 
+};
+export const updateProposalStatus = (proposalId, status) => {
+  return API.put(`/client/gig/proposals/${proposalId}/status`, { status });
 };

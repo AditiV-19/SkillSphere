@@ -36,3 +36,85 @@ export const applyToGig = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const getFreelancerApplications = async (req, res) => {
+  try {
+    // Look up all proposals matching the authenticated freelancer's user ID
+    const applications = await Proposal.find({ freelancerUser: req.user.id })
+      .populate({
+        path: "gig",
+        select: "title description budget status", // Grab core project info to render on cards
+      })
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      applications
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+export const updateFreelancerProposal = async (req, res) => {
+  try {
+    const { proposalId } = req.params;
+    const { description, bidAmount, estimatedTime } = req.body;
+
+    // 1. Find the proposal
+    const proposal = await Proposal.findById(proposalId);
+    if (!proposal) return res.status(404).json({ message: "Proposal not found." });
+
+    // 2. Security Check: Ensure this proposal belongs to the logged-in freelancer
+    if (proposal.freelancerUser.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized to edit this proposal." });
+    }
+
+    // 3. Status Guard: Only allow updates if the client hasn't acted on it yet
+    if (proposal.status !== "pending") {
+      return res.status(400).json({ 
+        message: `Cannot modify a proposal that has already been ${proposal.status}.` 
+      });
+    }
+
+    // 4. Perform Update
+    proposal.description = description || proposal.description;
+    proposal.bidAmount = bidAmount || proposal.bidAmount;
+    proposal.estimatedTime = estimatedTime || proposal.estimatedTime;
+    
+    await proposal.save();
+
+    return res.json({
+      success: true,
+      message: "Proposal updated successfully!",
+      proposal
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+export const updateProposalStatus = async (req, res) => {
+  try {
+    const { proposalId } = req.params;
+    const { status } = req.body; // "accepted", "negotiating", "rejected" 
+
+    if (!["accepted", "negotiating", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status parameter." });
+    }
+
+    const proposal = await Proposal.findByIdAndUpdate(
+      proposalId,
+      { status },
+      { new: true }
+    );
+
+    if (!proposal) return res.status(404).json({ message: "Proposal record not found." });
+
+    return res.json({ success: true, message: `Proposal status updated to ${status}`, proposal });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

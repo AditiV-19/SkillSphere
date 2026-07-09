@@ -44,7 +44,7 @@ export const sidebarMenus = {
     {
       label: "Applications",
       icon: FaClipboardList,
-      route: "/applications",
+      route: "/freelancer/gig/applications",
     },
 
     {
