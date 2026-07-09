@@ -228,16 +228,16 @@ export const getGigs = async (req, res) => {
 // ==========================================
 export const getGigById = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    const { gigId } = req.params;
+  
+    if (!mongoose.Types.ObjectId.isValid(gigId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid Gig ID.",
       });
     }
 
-    const gig = await Gig.findById(id)
+    const gig = await Gig.findById(gigId)
       .populate({
         path: "client",
         select: "companyName companyLogo companyDescription industry location",
@@ -258,7 +258,7 @@ export const getGigById = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message, 
     });
   }
 };
@@ -268,7 +268,8 @@ export const getGigById = async (req, res) => {
 // ==========================================
 export const updateGig = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { gigId } = req.params;
+    const id = gigId
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({

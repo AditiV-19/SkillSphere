@@ -8,8 +8,8 @@ import { createGig, getGigById, getGigs, updateGig, deleteGig, inviteFreelancer,
 const router = Router();
 
 
-router.get('/', getGigs);
-router.get('/:gigId', getGigById);
+router.get('/', authMiddleware, getGigs);
+router.get('/:gigId', authMiddleware, getGigById);
 
 // Business Operations restricted strictly to verified Clients
 router.post('/', authMiddleware, clientOnly, upload.array("files", 5), createGig);
