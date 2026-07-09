@@ -49,7 +49,7 @@ export const getProfile = async (req, res) => {
     const profile = await ClientProfile.findOneAndUpdate(
       { user: req.user.id },
       { $setOnInsert: { user: req.user.id } },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     ).populate("user", "username email role isVerified");
 
     const profileObj = profile.toObject();
