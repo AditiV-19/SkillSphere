@@ -2,18 +2,17 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getGigById,
-  // Add your proposal submission or delete API services here as needed
+  submitGigProposal,
 } from "../../services/api.js";
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import {
   ChevronLeft,
   Briefcase,
   IndianRupee,
-  Calendar,
-  MapPin,
   AlertCircle,
   FileText,
   User,
+  MapPin,
   CheckCircle,
   XCircle,
 } from "lucide-react";
@@ -27,11 +26,18 @@ export default function GigDetails() {
   const [error, setError] = useState("");
 
   // 💡 MOCK ROLE CHECK: Replace this with your actual Auth State / Context later
-  // e.g., const { user } = useAuth();
-  const [userRole, setUserRole] = useState("freelancer"); // Set to "client" to test client view
+  const [userRole, setUserRole] = useState("freelancer"); 
 
   const [isInvited, setIsInvited] = useState(false);
   const user = JSON.parse(localStorage.getItem("user")) || "";
+
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [proposalForm, setProposalForm] = useState({
+    description: "",
+    bidAmount: "",
+    estimatedTime: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (gigId) {
@@ -49,10 +55,7 @@ export default function GigDetails() {
       setGig(dataPayload);
 
       if (dataPayload && dataPayload.invitedFreelancers) {
-        // Double check if the logged-in User ID exists inside the invited array
-        const hasInvite =
-          dataPayload.invitedFreelancers.includes(user.id);
-          
+        const hasInvite = dataPayload.invitedFreelancers.includes(user.id);
         setIsInvited(hasInvite);
       }
     } catch (err) {
@@ -65,9 +68,21 @@ export default function GigDetails() {
     }
   };
 
-  const handleApply = () => {
-    alert(`Initiating application workspace for: ${gig.title}`);
-    // Navigate to your proposal submission page or trigger a modal
+  const handleProposalSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      await submitGigProposal(gigId, proposalForm);
+      alert("Application sent successfully!");
+      setShowApplyForm(false);
+      navigate("/freelancer/invitations"); 
+    } catch (err) {
+      alert(
+        err.response?.data?.message || "Application submission broke down.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -103,6 +118,7 @@ export default function GigDetails() {
       </DashboardLayout>
     );
   }
+
   return (
     <DashboardLayout>
       <div className="p-8 bg-slate-50/50 min-h-screen">
@@ -143,8 +159,7 @@ export default function GigDetails() {
 
               <div className="pt-2">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-2">
-                  <FileText size={16} className="text-blue-500" /> Project
-                  Description
+                  <FileText size={16} className="text-blue-500" /> Project Description
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                   {gig.description || "No project description provided."}
@@ -191,7 +206,7 @@ export default function GigDetails() {
 
               <hr className="border-slate-100" />
 
-              {/* 🚀 CONDITIONAL ACTION MODULE */}
+              {/* CONDITIONAL ACTION BUTTONS */}
               <div className="pt-2">
                 {userRole === "client" ? (
                   <div className="space-y-2">
@@ -205,7 +220,7 @@ export default function GigDetails() {
                 ) : (
                   <div className="flex flex-col gap-2">
                     <button
-                      onClick={handleApply}
+                      onClick={() => setShowApplyForm(true)}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
                     >
                       <CheckCircle size={14} />{" "}
@@ -213,7 +228,7 @@ export default function GigDetails() {
                     </button>
                     {isInvited && (
                       <button
-                        onClick={() => navigate(-1)} // You can replace this later with a handleDeclineInvite API call
+                        onClick={() => navigate(-1)} 
                         className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition"
                       >
                         <XCircle size={14} />
@@ -243,14 +258,13 @@ export default function GigDetails() {
                   <p className="text-xs text-slate-400 flex items-center gap-1">
                     <MapPin size={12} className="shrink-0" />
                     <span>
-                      {/* 🚀 FIX: Dynamically combine only existing fields with commas */}
                       {[
                         gig.client.location.address,
                         gig.client.location.city,
                         gig.client.location.state,
                         gig.client.location.country,
                       ]
-                        .filter(Boolean) // Removes undefined/null/empty strings
+                        .filter(Boolean)
                         .join(", ")}
                     </span>
                   </p>
@@ -260,6 +274,85 @@ export default function GigDetails() {
           </div>
         </div>
       </div>
+
+      {/* 🚀 FIXED: Renders safely outside the sidebar button logic block */}
+      {showApplyForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <form
+            onSubmit={handleProposalSubmit}
+            className="bg-white p-6 rounded-2xl max-w-md w-full space-y-4 shadow-xl border border-slate-100"
+          >
+            <h3 className="text-lg font-bold text-slate-800">
+              Submit Your Project Proposal
+            </h3>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 block mb-1">
+                Proposal Description
+              </label>
+              <textarea
+                required
+                rows={4}
+                value={proposalForm.description}
+                onChange={(e) =>
+                  setProposalForm({ ...proposalForm, description: e.target.value })
+                }
+                className="w-full border border-slate-200 outline-none p-2.5 rounded-xl text-sm focus:border-blue-500 transition"
+                placeholder="Explain your technical strategy..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">
+                  Bid Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={proposalForm.bidAmount}
+                  onChange={(e) =>
+                    setProposalForm({ ...proposalForm, bidAmount: e.target.value })
+                  }
+                  className="w-full border border-slate-200 outline-none p-2.5 rounded-xl text-sm focus:border-blue-500 transition"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">
+                  Estimated Duration
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., 2 weeks"
+                  value={proposalForm.estimatedTime}
+                  onChange={(e) =>
+                    setProposalForm({ ...proposalForm, estimatedTime: e.target.value })
+                  }
+                  className="w-full border border-slate-200 outline-none p-2.5 rounded-xl text-sm focus:border-blue-500 transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowApplyForm(false)}
+                className="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl font-bold text-xs transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-sm transition disabled:opacity-50"
+              >
+                {submitting ? "Submitting..." : "Send Proposal"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

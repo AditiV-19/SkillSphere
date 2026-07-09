@@ -93,3 +93,9 @@ export const inviteFreelancerToGig = (gigId, freelancerUserId) =>{
 export const getFreelancerInvitations = () => {
   return API.get("/client/gig/freelancer/invitations");
 };
+
+// Apply to gig
+
+export const submitGigProposal = (gigId, proposalData) => {
+  return API.post(`/client/gig/${gigId}/apply`, proposalData);
+};

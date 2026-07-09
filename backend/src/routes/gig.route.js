@@ -4,6 +4,7 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/uploadImage.js"
 import { clientOnly, freelancerOnly } from "../middleware/role.middleware.js";
 import { createGig, getGigById, getGigs, updateGig, deleteGig, inviteFreelancer, uninviteFreelancer, getFreelancerInvitations } from "../controller/gig.controller.js";
+import { applyToGig } from "../controller/proposal.controller.js";
 
 const router = Router();
 
@@ -23,5 +24,7 @@ router.delete("/:gigId/invite/:freelancerUserId", authMiddleware, clientOnly, un
 
 router.get("/freelancer/invitations", authMiddleware, freelancerOnly, getFreelancerInvitations);
 
+
+router.post("/:gigId/apply", authMiddleware, freelancerOnly, applyToGig);
 
 export default router;
