@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Gig } from "../models/gig.model.js";
 import { ClientProfile } from "../models/profile.model.js";
+import { Proposal } from "../models/proposal.model.js";
 // ==========================================
 // 1. CREATE GIG (CONSOLIDATED & CLEANED)
 // ==========================================
@@ -39,7 +40,10 @@ export const createGig = async (req, res) => {
         try {
           budget = JSON.parse(budget);
         } catch (e) {
-          console.error("❌ Multer caught invalid budget string formatting:", budget);
+          console.error(
+            "❌ Multer caught invalid budget string formatting:",
+            budget,
+          );
           return res.status(400).json({
             success: false,
             message: "Invalid budget payload format configuration.",
@@ -74,13 +78,15 @@ export const createGig = async (req, res) => {
           .filter(Boolean);
       }
     }
-    const cleanSkills = Array.isArray(skillsRequired) ? skillsRequired : [skillsRequired];
+    const cleanSkills = Array.isArray(skillsRequired)
+      ? skillsRequired
+      : [skillsRequired];
 
     // 5. EXTRACT FILES STREAM FROM MULTI-PART ENVELOPE
     let attachments = [];
     if (req.files && req.files.length > 0) {
       attachments = req.files.map((file) => ({
-        url: file.path || file.secure_url, 
+        url: file.path || file.secure_url,
         name: file.originalname,
       }));
     }
@@ -229,7 +235,7 @@ export const getGigs = async (req, res) => {
 export const getGigById = async (req, res) => {
   try {
     const { gigId } = req.params;
-  
+
     if (!mongoose.Types.ObjectId.isValid(gigId)) {
       return res.status(400).json({
         success: false,
@@ -251,14 +257,24 @@ export const getGigById = async (req, res) => {
       });
     }
 
+    let hasApplied = false;
+    if (req.user && req.user.role === "freelancer") {
+      const existingProposal = await Proposal.findOne({
+        gig: gigId,
+        freelancerUser: req.user.id,
+      });
+      if (existingProposal) hasApplied = true;
+    }
+
     return res.status(200).json({
       success: true,
       gig,
+      hasApplied
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message, 
+      message: error.message,
     });
   }
 };
@@ -269,7 +285,7 @@ export const getGigById = async (req, res) => {
 export const updateGig = async (req, res) => {
   try {
     const { gigId } = req.params;
-    const id = gigId
+    const id = gigId;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -462,25 +478,27 @@ export const deleteGig = async (req, res) => {
 export const inviteFreelancer = async (req, res) => {
   try {
     const { gigId } = req.params;
-    const { freelancerUserId } = req.body; 
+    const { freelancerUserId } = req.body;
 
     // 1. Find the client profile of the logged-in user
     const clientProfile = await ClientProfile.findOne({ user: req.user.id });
     if (!clientProfile) {
-      return res.status(403).json({ message: "Only clients can invite freelancers." });
+      return res
+        .status(403)
+        .json({ message: "Only clients can invite freelancers." });
     }
 
     // 2. Atomically verify ownership, status, and add the freelancer
     const updatedGig = await Gig.findOneAndUpdate(
-      { 
-        _id: gigId, 
+      {
+        _id: gigId,
         client: clientProfile._id,
-        status: "open" 
+        status: "open",
       },
-      { 
-        $addToSet: { invitedFreelancers: freelancerUserId } 
+      {
+        $addToSet: { invitedFreelancers: freelancerUserId },
       },
-      { new: true } // Returns the modified document if needed
+      { new: true }, // Returns the modified document if needed
     );
 
     // 3. Handle errors if the query failed to match a document
@@ -489,18 +507,30 @@ export const inviteFreelancer = async (req, res) => {
       const gigExists = await Gig.findById(gigId);
       if (!gigExists) return res.status(404).json({ message: "Gig not found" });
       if (gigExists.client.toString() !== clientProfile._id.toString()) {
-        return res.status(403).json({ message: "Not authorized to invite on this gig" });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to invite on this gig" });
       }
       if (gigExists.status !== "open") {
-        return res.status(400).json({ message: "Gig is no longer open for invites" });
+        return res
+          .status(400)
+          .json({ message: "Gig is no longer open for invites" });
       }
     }
 
     // TODO Week 3: fire a notification here (Socket.IO + email) using updatedGig data
 
-    return res.json({ message: "Freelancer invited successfully", gig: updatedGig });
+    return res.json({
+      message: "Freelancer invited successfully",
+      gig: updatedGig,
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Server error during invitation", error: error.message });
+    return res
+      .status(500)
+      .json({
+        message: "Server error during invitation",
+        error: error.message,
+      });
   }
 };
 
@@ -519,29 +549,35 @@ export const uninviteFreelancer = async (req, res) => {
 
     // 2. Atomically verify ownership and pull the freelancer out of the array
     const updatedGig = await Gig.findOneAndUpdate(
-      { 
-        _id: gigId, 
-        client: clientProfile._id 
+      {
+        _id: gigId,
+        client: clientProfile._id,
       },
-      { 
-        $pull: { invitedFreelancers: freelancerUserId } 
+      {
+        $pull: { invitedFreelancers: freelancerUserId },
       },
-      { new: true }
+      { new: true },
     );
 
     // 3. Handle errors if the query failed to match a document
     if (!updatedGig) {
       const gigExists = await Gig.findById(gigId);
       if (!gigExists) return res.status(404).json({ message: "Gig not found" });
-      return res.status(403).json({ message: "Not authorized to modify this gig" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to modify this gig" });
     }
 
     return res.json({ message: "Invite removed successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Server error while removing invite", error: error.message });
+    return res
+      .status(500)
+      .json({
+        message: "Server error while removing invite",
+        error: error.message,
+      });
   }
 };
-
 
 // ==========================================
 // 8. Invitations on Freelancers side
@@ -550,14 +586,17 @@ export const uninviteFreelancer = async (req, res) => {
 export const getFreelancerInvitations = async (req, res) => {
   try {
     // req.user.id is extracted directly from the encrypted cookie/JWT header
-    const loggedInFreelancerUserId = req.user.id; 
-    console.log("Logged-in freelancer's user id:", req.user.id, typeof req.user.id);
+    const loggedInFreelancerUserId = req.user.id;
+    console.log(
+      "Logged-in freelancer's user id:",
+      req.user.id,
+      typeof req.user.id,
+    );
     const invitations = await Gig.find({
       status: "open",
       // Strict matching: The array MUST contain this specific user's ID
-      invitedFreelancers: loggedInFreelancerUserId 
-    })
-    .sort({ createdAt: -1 });
+      invitedFreelancers: loggedInFreelancerUserId,
+    }).sort({ createdAt: -1 });
 
     return res.json({ success: true, invitations });
   } catch (error) {

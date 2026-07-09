@@ -26,6 +26,7 @@ export default function GigDetails() {
   const [userRole, setUserRole] = useState("freelancer");
 
   const [isInvited, setIsInvited] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
   const user = JSON.parse(localStorage.getItem("user")) || "";
 
   const [showApplyForm, setShowApplyForm] = useState(false);
@@ -48,8 +49,10 @@ export default function GigDetails() {
       setError("");
       const response = await getGigById(gigId);
       const dataPayload = response.data?.gig || response.data;
+      const appliedFlag = response.data?.hasApplied || false;
 
       setGig(dataPayload);
+      setHasApplied(appliedFlag);
 
       if (dataPayload && dataPayload.invitedFreelancers) {
         const hasInvite = dataPayload.invitedFreelancers.includes(user.id);
@@ -72,7 +75,8 @@ export default function GigDetails() {
       await submitGigProposal(gigId, proposalForm);
       alert("Application sent successfully!");
       setShowApplyForm(false);
-      navigate("/freelancer/invitations");
+      setHasApplied(true); // Soft update UI state locally
+      navigate("/freelancer/gig/applications");
     } catch (err) {
       alert(
         err.response?.data?.message || "Application submission broke down.",
@@ -156,8 +160,7 @@ export default function GigDetails() {
 
               <div className="pt-2">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-2">
-                  <FileText size={16} className="text-blue-500" /> Project
-                  Description
+                  <FileText size={16} className="text-blue-500" /> Project Description
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                   {gig.description || "No project description provided."}
@@ -217,21 +220,39 @@ export default function GigDetails() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => setShowApplyForm(true)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
-                    >
-                      <CheckCircle size={14} />{" "}
-                      {isInvited ? "Accept & Apply" : "Apply for Gig"}
-                    </button>
-                    {isInvited && (
-                      <button
-                        onClick={() => navigate(-1)}
-                        className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition"
-                      >
-                        <XCircle size={14} />
-                        <span>Decline Offer</span>
-                      </button>
+                    {/* 🚀 HIDDEN UNTIL APPLIED OPTION BANNER SHIELD */}
+                    {hasApplied ? (
+                      <div className="w-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-center py-3 px-4 rounded-xl space-y-1 shadow-sm">
+                        <p className="text-xs font-bold uppercase tracking-wide">Application Submitted</p>
+                        <p className="text-[10px] text-emerald-600 font-medium leading-normal">
+                          You have submitted a proposal for this gig. You can monitor its progression on your applications panel.
+                        </p>
+                        <button 
+                          onClick={() => navigate("/freelancer/gig/applications")}
+                          className="mt-2 text-[10px] font-extrabold text-emerald-800 underline block mx-auto hover:text-emerald-950 transition uppercase tracking-wider"
+                        >
+                          Track Status Feed
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setShowApplyForm(true)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition"
+                        >
+                          <CheckCircle size={14} />{" "}
+                          {isInvited ? "Accept & Apply" : "Apply for Gig"}
+                        </button>
+                        {isInvited && (
+                          <button
+                            onClick={() => navigate(-1)}
+                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition"
+                          >
+                            <XCircle size={14} />
+                            <span>Decline Offer</span>
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -273,7 +294,7 @@ export default function GigDetails() {
         </div>
       </div>
 
-      {/* 🚀 FIXED: Renders safely outside the sidebar button logic block */}
+      {/* Renders safely outside the sidebar button logic block */}
       {showApplyForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
           <form

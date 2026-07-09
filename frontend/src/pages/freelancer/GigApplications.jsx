@@ -4,7 +4,7 @@ import { getFreelancerApplications, updateFreelancerProposal } from "../../servi
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import { Briefcase, IndianRupee, Clock, ExternalLink, Inbox, AlertCircle, Edit2 } from "lucide-react";
 
-export default function FreelancerApplications() {
+export default function GigApplications() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
