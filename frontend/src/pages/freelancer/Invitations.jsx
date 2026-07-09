@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import { getFreelancerInvitations } from "../../services/api";
 import { MailOpen, Calendar, IndianRupee, Briefcase, Check, X } from "lucide-react";
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
+import { useNavigate } from "react-router-dom";
 
 export default function Invitations() {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const navigate = useNavigate()
+  
   useEffect(() => {
     fetchInvites();
   }, []);
@@ -65,10 +68,10 @@ export default function Invitations() {
               {/* Action Buttons */}
               <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
                 <button 
-                  onClick={() => alert("Navigate to proposal flow or accept setup")} 
+                  onClick={() => navigate(`/freelancer/gig/${gig._id}`)} 
                   className="flex-1 md:flex-none flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition"
                 >
-                  <Check size={14}/> View & Apply
+                  <Check size={14}/> View
                 </button>
               </div>
 

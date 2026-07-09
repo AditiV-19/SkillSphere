@@ -16,6 +16,7 @@ import ProjectDetails from './pages/client/ProjectDetails'
 import BrowseFreelancers from './pages/client/BrowseFreelancers'
 import ViewFreelancerProfile from './pages/client/ViewFreelancerProfile'
 import Invitations from './pages/freelancer/Invitations'
+import GigDetails from './pages/freelancer/GigDetails'
 export default function App(){
 
     const user = JSON.parse(localStorage.getItem("user"));
@@ -121,6 +122,11 @@ export default function App(){
             <Route path="/freelancer/invitations" element={
                 <ProtectedRoute allowedRoles={["freelancer"]}>
                     <Invitations />
+                </ProtectedRoute>
+            } />
+             <Route path="/freelancer/gig/:gigId" element={
+                <ProtectedRoute allowedRoles={["freelancer"]}>
+                    <GigDetails />
                 </ProtectedRoute>
             } />
            

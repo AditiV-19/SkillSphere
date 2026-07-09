@@ -232,8 +232,9 @@ export default function GigMarketplace() {
                     </h2>
                   </div>
                   {user.role === "freelancer" ? (
-                    <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-blue-200 self-start sm:self-center text-sm">
-                      Apply
+                    <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-blue-200 self-start sm:self-center text-sm"
+                    onClick={() => {navigate(`/freelancer/gig/${gig._id}`)}}>
+                      View
                     </button>
                   ) : user.role === "client" ? (
                     <button className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-amber-200 self-start sm:self-center text-sm"
