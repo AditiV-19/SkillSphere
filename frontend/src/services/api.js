@@ -84,7 +84,12 @@ export const getFreelancerById = (id) => {
   return API.get(`/profile/client/freelancer/${id}`);
 };
 
-
+// invite freelancer
 export const inviteFreelancerToGig = (gigId, freelancerUserId) =>{
   return API.patch(`client/gig/${gigId}/invite`, { freelancerUserId });
 }
+
+// invitations on freelancer side
+export const getFreelancerInvitations = () => {
+  return API.get("client/gig/freelancer/invitations");
+};

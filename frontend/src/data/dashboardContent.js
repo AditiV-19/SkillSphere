@@ -18,10 +18,10 @@ export const dashboardContent = {
       title: "Ready to land your next project?",
       subtitle:
         "Complete your profile, create gigs and connect with clients worldwide.",
-      primaryButton: "Create Gig",
-      primaryRoute: "/freelancer/create-gig",
+      primaryButton: "Check Invitations",
+      primaryRoute: "/freelancer/invitations",
       secondaryButton: "Browse Projects",
-      secondaryRoute: "/freelancer/projects",
+      secondaryRoute: "/client/marketplace",
     },
 
     stats: [
@@ -64,15 +64,15 @@ export const dashboardContent = {
         description: "Increase your chances of getting hired.",
         icon: FaUser,
         color: "bg-blue-500",
-        route: "/profile",
+        route: "/freelancer/profile",
       },
 
       {
-        title: "Create Gig",
-        description: "Start selling your skills.",
+        title: "Check Invitations",
+        description: "Start application of your skills.",
         icon: FaPlusCircle,
         color: "bg-green-500",
-        route: "/freelancer/create-gig",
+        route: "/freelancer/invitations",
       },
 
       {
@@ -80,7 +80,7 @@ export const dashboardContent = {
         description: "Apply for freelance work.",
         icon: FaSearch,
         color: "bg-purple-500",
-        route: "/freelancer/projects",
+        route: "/client/marketplace",
       },
     ],
   },

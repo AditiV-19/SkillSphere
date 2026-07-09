@@ -15,6 +15,7 @@ import MyProjects from './pages/client/MyProjects'
 import ProjectDetails from './pages/client/ProjectDetails'
 import BrowseFreelancers from './pages/client/BrowseFreelancers'
 import ViewFreelancerProfile from './pages/client/ViewFreelancerProfile'
+import Invitations from './pages/freelancer/Invitations'
 export default function App(){
 
     const user = JSON.parse(localStorage.getItem("user"));
@@ -116,6 +117,12 @@ export default function App(){
                 <GigMarketplace />
             } />
             
+
+            <Route path="/freelancer/invitations" element={
+                <ProtectedRoute allowedRoles={["freelancer"]}>
+                    <Invitations />
+                </ProtectedRoute>
+            } />
            
 
 

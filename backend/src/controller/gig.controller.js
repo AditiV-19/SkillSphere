@@ -541,3 +541,25 @@ export const uninviteFreelancer = async (req, res) => {
   }
 };
 
+
+// ==========================================
+// 8. Invitations on Freelancers side
+// ==========================================
+
+export const getFreelancerInvitations = async (req, res) => {
+  try {
+    // req.user.id is extracted directly from the encrypted cookie/JWT header
+    const loggedInFreelancerUserId = req.user.id; 
+    console.log("Logged-in freelancer's user id:", req.user.id, typeof req.user.id);
+    const invitations = await Gig.find({
+      status: "open",
+      // Strict matching: The array MUST contain this specific user's ID
+      invitedFreelancers: loggedInFreelancerUserId 
+    })
+    .sort({ createdAt: -1 });
+
+    return res.json({ success: true, invitations });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch invitations" });
+  }
+};
