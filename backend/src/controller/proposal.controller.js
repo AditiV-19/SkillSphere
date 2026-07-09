@@ -1,5 +1,6 @@
 import { Proposal } from "../models/proposal.model.js";
 import { Gig } from "../models/gig.model.js";
+import { ClientProfile } from "../models/profile.model.js"
 
 export const applyToGig = async (req, res) => {
   try {
@@ -10,7 +11,9 @@ export const applyToGig = async (req, res) => {
     const gig = await Gig.findById(gigId);
     if (!gig) return res.status(404).json({ message: "Gig not found" });
     if (gig.status !== "open") {
-      return res.status(400).json({ message: "This gig is no longer accepting proposals." });
+      return res
+        .status(400)
+        .json({ message: "This gig is no longer accepting proposals." });
     }
 
     // 2. Create the proposal record linked to the logged-in freelancer's req.user.id
@@ -19,7 +22,7 @@ export const applyToGig = async (req, res) => {
       freelancerUser: req.user.id,
       description,
       bidAmount,
-      estimatedTime
+      estimatedTime,
     });
 
     // TODO Week 3: Fire real-time notification to the Client via Socket.IO/Email
@@ -27,13 +30,17 @@ export const applyToGig = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Proposal submitted successfully!",
-      proposal: newProposal
+      proposal: newProposal,
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ message: "You have already applied to this gig." });
+      return res
+        .status(400)
+        .json({ message: "You have already applied to this gig." });
     }
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 
@@ -49,13 +56,14 @@ export const getFreelancerApplications = async (req, res) => {
 
     return res.json({
       success: true,
-      applications
+      applications,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
-
 
 export const updateFreelancerProposal = async (req, res) => {
   try {
@@ -64,17 +72,20 @@ export const updateFreelancerProposal = async (req, res) => {
 
     // 1. Find the proposal
     const proposal = await Proposal.findById(proposalId);
-    if (!proposal) return res.status(404).json({ message: "Proposal not found." });
+    if (!proposal)
+      return res.status(404).json({ message: "Proposal not found." });
 
     // 2. Security Check: Ensure this proposal belongs to the logged-in freelancer
     if (proposal.freelancerUser.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized to edit this proposal." });
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to edit this proposal." });
     }
 
     // 3. Status Guard: Only allow updates if the client hasn't acted on it yet
     if (proposal.status !== "pending") {
-      return res.status(400).json({ 
-        message: `Cannot modify a proposal that has already been ${proposal.status}.` 
+      return res.status(400).json({
+        message: `Cannot modify a proposal that has already been ${proposal.status}.`,
       });
     }
 
@@ -82,39 +93,92 @@ export const updateFreelancerProposal = async (req, res) => {
     proposal.description = description || proposal.description;
     proposal.bidAmount = bidAmount || proposal.bidAmount;
     proposal.estimatedTime = estimatedTime || proposal.estimatedTime;
-    
+
     await proposal.save();
 
     return res.json({
       success: true,
       message: "Proposal updated successfully!",
-      proposal
+      proposal,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
-
 
 export const updateProposalStatus = async (req, res) => {
   try {
     const { proposalId } = req.params;
-    const { status } = req.body; // "accepted", "negotiating", "rejected" 
+    const { status } = req.body; // "accepted", "negotiating", "rejected"
 
-    if (!["accepted", "negotiating", "rejected"].includes(status)) {
+    if (!["pending", "accepted", "negotiating", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status parameter." });
     }
 
     const proposal = await Proposal.findByIdAndUpdate(
       proposalId,
       { status },
-      { new: true }
+      { returnDocument: 'after' },
     );
 
-    if (!proposal) return res.status(404).json({ message: "Proposal record not found." });
+    if (!proposal)
+      return res.status(404).json({ message: "Proposal record not found." });
 
-    return res.json({ success: true, message: `Proposal status updated to ${status}`, proposal });
+    return res.json({
+      success: true,
+      message: `Proposal status updated to ${status}`,
+      proposal,
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getCompanyAllApplications = async (req, res) => {
+  try {
+    const clientProfile = await ClientProfile.findOne({ user: req.user.id });
+
+    if (!clientProfile) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Client profile profile registry index not found for this user account.",
+      });
+    }
+
+    const gigs = await Gig.find({ client: clientProfile._id }).sort({
+      createdAt: -1,
+    });
+
+    const gigsWithApplications = await Promise.all(
+      gigs.map(async (gig) => {
+        const proposals = await Proposal.find({ gig: gig._id })
+          .populate("freelancerUser", "firstName lastName email")
+          .sort({ createdAt: -1 });
+
+        return {
+          ...gig.toObject(),
+          proposals,
+          proposalsCount: proposals.length,
+        };
+      }),
+    );
+
+    return res.json({
+      success: true,
+      data: gigsWithApplications,
+    });
+  } catch (error) {
+    console.error("Dashboard database breakdown:", error);
+    return res
+      .status(500)
+      .json({
+        message: "Server error packaging company data deck",
+        error: error.message,
+      });
   }
 };

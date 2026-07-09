@@ -106,5 +106,8 @@ export const getFreelancerApplications = () => {
   return API.get("/client/gig/freelancer/applications/all"); 
 };
 export const updateProposalStatus = (proposalId, status) => {
-  return API.put(`/client/gig/proposals/${proposalId}/status`, { status });
+  return API.patch(`/client/gig/proposals/${proposalId}/status`, { status });
+};
+export const getCompanyApplicationsDeck = () => {
+  return API.get("/client/gig/applications/all"); 
 };

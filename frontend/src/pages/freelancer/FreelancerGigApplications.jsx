@@ -53,7 +53,7 @@ const getStatusTimelineDetails = (status) => {
   }
 };
 
-export default function GigApplications() {
+export default function FreelancerGigApplications() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -137,9 +137,14 @@ export default function GigApplications() {
           </p>
         </div>
 
+        {error && (
+          <div className="p-4 mb-4 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2">
+            <AlertCircle size={16} /> <span>{error}</span>
+          </div>
+        )}
+
         <div className="space-y-4">
           {applications.map((app) => {
-            // Extract custom contextual text styling matching the live data status
             const statusConfig = getStatusTimelineDetails(app.status);
 
             return (
@@ -169,7 +174,7 @@ export default function GigApplications() {
                   </div>
                 </div>
 
-                {/* 🚀 NEW LIVE PROPOSAL STATUS TRACKER TIMELINE ALERT */}
+                {/* LIVE PROPOSAL STATUS TRACKER TIMELINE ALERT */}
                 <div
                   className={`border p-4 rounded-xl space-y-1 ${statusConfig.color}`}
                 >
@@ -215,7 +220,7 @@ export default function GigApplications() {
                     )}
                     {app.gig && (
                       <button
-                        onClick={() => navigate(`/client/gig/${app.gig._id}`)}
+                        onClick={() => navigate(`/freelancer/gig/${app.gig._id}`)}
                         className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5 transition"
                       >
                         <span>View Project Spec</span>{" "}
@@ -227,10 +232,18 @@ export default function GigApplications() {
               </div>
             );
           })}
+
+          {applications.length === 0 && (
+            <div className="text-center py-12 bg-white border border-dashed border-slate-300 rounded-2xl p-8">
+              <Inbox size={36} className="mx-auto text-slate-300 mb-2" />
+              <h4 className="text-sm font-bold text-slate-700">No active applications</h4>
+              <p className="text-xs text-slate-400 mt-1">When you apply to gigs, your active bids will show up right here.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 🚀 EDIT PROPOSAL MODAL OVERLAY */}
+      {/* EDIT PROPOSAL MODAL OVERLAY */}
       {showEditForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <form
