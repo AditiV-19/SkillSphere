@@ -11,6 +11,7 @@ import {
   FaFlag,
   FaPlusCircle,
   FaTasks,
+  FaEnvelopeOpen,
   
 } from "react-icons/fa";
 
@@ -29,9 +30,9 @@ export const sidebarMenus = {
     },
 
     {
-      label: "My Gigs",
-      icon: FaBriefcase,
-      route: "/freelancer/gigs",
+      label: "Invitations",
+      icon: FaEnvelopeOpen,
+      route: "/freelancer/invitations",
     },
 
     {
