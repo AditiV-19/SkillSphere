@@ -39,23 +39,6 @@ export default function FreelancerProfile() {
 
   const [loading, setLoading] = useState(true);
 
-  const handleBooking = async (slot) => {
-    try {
-      // 1. Call your API to update the booking status
-      // await updateProfile({
-      //   action: 'bookSlot',
-      //   slotId: slot._id // Make sure your slot object has an _id
-      // });
-
-      // 2. Refresh the profile data to show the updated UI
-      // await fetchProfile();
-
-      alert("Slot booked successfully!");
-    } catch (error) {
-      console.error("Booking failed:", error);
-      alert("Could not book the slot. It might already be taken.");
-    }
-  };
 
   const handleSubmit = async (formData) => {
     try {
@@ -95,6 +78,7 @@ export default function FreelancerProfile() {
           isEditing={isEditing}
           setIsEditing={setIsEditing}
           profile={profile}
+          isShow={true}
         />
         {/* content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -333,40 +317,33 @@ export default function FreelancerProfile() {
                         className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200"
                       >
                         {/* Time Display */}
-                        <span
-                          className={`text-sm font-medium ${slot.isBooked ? "text-slate-400" : "text-slate-700"}`}
-                        >
-                          {startDate.toLocaleDateString("en-IN", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}{" "}
+
+                       <div className="font-semibold text-slate-700 leading-normal">
+                          <p>
+                            {startDate.toLocaleDateString("en-IN", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}{" "}
                           -{" "}
                           {endDate.toLocaleDateString("en-IN", {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           })}{" "}
-                          <br />
-                          {start} - {end}
-                        </span>
-
-                        {/* Status and Action */}
-                        {slot.isBooked ? (
-                          <span className="bg-red-100 text-red-500 text-xs font-bold px-3 py-1 rounded-full">
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-normal mt-0.5">
+                            {start} - {end}
+                          </p>
+                        </div>
+                         {slot.isBooked ? (
+                          <span className="bg-green-100 text-green-500 text-s font-bold px-3 py-1 rounded-full border-green-300 border-2">
                             Booked
                           </span>
-                        ) : profile.user.role === "client" ? (
-                          <span className="bg-slate-200 text-slate-500 text-xs font-bold px-3 py-1 rounded-full">
+                        ) : (
+                          <span className="bg-slate-200 text-slate-500 text-s font-bold px-3 py-1 rounded-full">
                             Your Slot
                           </span>
-                        ) : (
-                          <button
-                            onClick={() => handleBooking(slot)}
-                            className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-4 py-1.5 rounded-md transition-colors"
-                          >
-                            Book Now
-                          </button>
                         )}
                       </div>
                     );

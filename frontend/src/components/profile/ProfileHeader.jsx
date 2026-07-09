@@ -3,7 +3,7 @@ import { FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
 import React, { useState } from "react";
 import { MapPin, Phone } from "lucide-react";
 
-export default function ProfileHeader({ isEditing, setIsEditing, profile }) {
+export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow}) {
 
   const user = localStorage.getItem('user')? JSON.parse(localStorage.getItem("user"))
   : null;
@@ -129,12 +129,14 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile }) {
         </div>
 
         {/* Edit Button */}
-        <button
+        { isShow && (<button
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition font-medium"
           onClick={() => setIsEditing(true)}
         >
           {isEditing ? "Save Profile" : "Edit Profile"}
-        </button>
+        </button>)
+        }
+        
       </div>
 
       {/* Completion Bar */}

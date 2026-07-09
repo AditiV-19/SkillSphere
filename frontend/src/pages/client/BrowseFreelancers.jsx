@@ -66,9 +66,9 @@ export default function BrowseFreelancers() {
 
   // Dynamic live search/filter logic processing
   const filteredFreelancers = freelancers.filter((fl) => {
-    const nameLower = fl.name?.toLowerCase() || fl.username?.toLowerCase() || "";
-    const titleLower = fl.title?.toLowerCase() || "";
-    const bioLower = fl.bio?.toLowerCase() || "";
+    const nameLower = fl.firstname?.toLowerCase() || fl.username?.toLowerCase() || "";
+    const titleLower = fl.headline?.toLowerCase() || "";
+    const bioLower = fl.about?.toLowerCase() || "";
     const searchLower = search.toLowerCase();
     
     const skillsArray = Array.isArray(fl.skills) ? fl.skills : [];
@@ -224,7 +224,7 @@ export default function BrowseFreelancers() {
                       key={index} 
                       className="bg-slate-50 border border-slate-200/60 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-lg"
                     >
-                      {skill}
+                     {skill.name} {skill.proficiency ? `(${skill.proficiency})` : ""}
                     </span>
                   ))}
                 </div>
