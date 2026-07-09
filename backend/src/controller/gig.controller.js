@@ -453,3 +453,91 @@ export const deleteGig = async (req, res) => {
     });
   }
 };
+
+// ==========================================
+// 6. Invite Freelancers
+// ==========================================
+
+export const inviteFreelancer = async (req, res) => {
+  try {
+    const { gigId } = req.params;
+    const { freelancerUserId } = req.body; 
+
+    // 1. Find the client profile of the logged-in user
+    const clientProfile = await ClientProfile.findOne({ user: req.user.id });
+    if (!clientProfile) {
+      return res.status(403).json({ message: "Only clients can invite freelancers." });
+    }
+
+    // 2. Atomically verify ownership, status, and add the freelancer
+    const updatedGig = await Gig.findOneAndUpdate(
+      { 
+        _id: gigId, 
+        client: clientProfile._id,
+        status: "open" 
+      },
+      { 
+        $addToSet: { invitedFreelancers: freelancerUserId } 
+      },
+      { new: true } // Returns the modified document if needed
+    );
+
+    // 3. Handle errors if the query failed to match a document
+    if (!updatedGig) {
+      // Pinpoint the exact reason for failure to give clean API feedback
+      const gigExists = await Gig.findById(gigId);
+      if (!gigExists) return res.status(404).json({ message: "Gig not found" });
+      if (gigExists.client.toString() !== clientProfile._id.toString()) {
+        return res.status(403).json({ message: "Not authorized to invite on this gig" });
+      }
+      if (gigExists.status !== "open") {
+        return res.status(400).json({ message: "Gig is no longer open for invites" });
+      }
+    }
+
+    // TODO Week 3: fire a notification here (Socket.IO + email) using updatedGig data
+
+    return res.json({ message: "Freelancer invited successfully", gig: updatedGig });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error during invitation", error: error.message });
+  }
+};
+
+// ==========================================
+// 7. Uninvite Freelancers
+// ==========================================
+export const uninviteFreelancer = async (req, res) => {
+  try {
+    const { gigId, freelancerUserId } = req.params;
+
+    // 1. Find the client profile of the logged-in user
+    const clientProfile = await ClientProfile.findOne({ user: req.user.id });
+    if (!clientProfile) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    // 2. Atomically verify ownership and pull the freelancer out of the array
+    const updatedGig = await Gig.findOneAndUpdate(
+      { 
+        _id: gigId, 
+        client: clientProfile._id 
+      },
+      { 
+        $pull: { invitedFreelancers: freelancerUserId } 
+      },
+      { new: true }
+    );
+
+    // 3. Handle errors if the query failed to match a document
+    if (!updatedGig) {
+      const gigExists = await Gig.findById(gigId);
+      if (!gigExists) return res.status(404).json({ message: "Gig not found" });
+      return res.status(403).json({ message: "Not authorized to modify this gig" });
+    }
+
+    return res.json({ message: "Invite removed successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error while removing invite", error: error.message });
+  }
+};
+

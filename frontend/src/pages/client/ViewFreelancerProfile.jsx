@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getFreelancerById } from "../../services/api.js"; // 🚀 Connects directly to our single profile router
+import {
+  getFreelancerById,
+  getGigs, 
+  inviteFreelancerToGig, 
+} from "../../services/api.js";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import ProfileHeader from "../../components/profile/ProfileHeader";
@@ -17,7 +21,10 @@ import {
   GraduationCap,
   Languages as LanguagesIcon,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Send,
+  X,
+  Check,
 } from "lucide-react";
 
 const formatDate = (date) => {
@@ -27,6 +34,137 @@ const formatDate = (date) => {
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 };
 
+//-------------INVITE MODAL-------------------
+
+function InviteToGigModal({ freelancerUserId, onClose }) {
+  const [gigs, setGigs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [invitingId, setInvitingId] = useState(null);
+  const [invitedIds, setInvitedIds] = useState(new Set());
+
+  useEffect(() => {
+    fetchOpenGigs();
+  }, []);
+
+  const fetchOpenGigs = async () => {
+    try {
+      setLoading(true);
+      // Only gigs this client owns and that are still open can receive invites
+      const response = await getGigs({ status: "open" });
+      const list = response.data?.gigs || response.data || [];
+      setGigs(list);
+
+      // Pre-mark gigs where this freelancer is already invited
+      const already = new Set(
+        list
+          .filter((g) => g.invitedFreelancers?.includes(freelancerUserId))
+          .map((g) => g._id),
+      );
+      setInvitedIds(already);
+    } catch (err) {
+      console.error(err);
+      setError("Could not load your gigs. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInvite = async (gigId) => {
+    try {
+      setInvitingId(gigId);
+      await inviteFreelancerToGig(gigId, freelancerUserId);
+      setInvitedIds((prev) => new Set(prev).add(gigId));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to send invite.");
+    } finally {
+      setInvitingId(null);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative bg-white w-full max-w-md rounded-2xl shadow-xl flex flex-col overflow-hidden max-h-[80vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-blue-600">
+          <h2 className="text-base font-semibold text-white">
+            Invite to a Gig
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-blue-100 hover:text-white hover:bg-blue-700 rounded-full p-1.5 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+          {loading && (
+            <p className="text-sm text-slate-400 text-center py-6">
+              Loading your open gigs...
+            </p>
+          )}
+
+          {!loading && error && (
+            <p className="text-sm text-rose-500 text-center py-6">{error}</p>
+          )}
+
+          {!loading && !error && gigs.length === 0 && (
+            <p className="text-sm text-slate-400 text-center py-6">
+              You don't have any open gigs yet. Post a gig first, then invite
+              freelancers to it.
+            </p>
+          )}
+
+          {!loading &&
+            gigs.map((gig) => {
+              const isInvited = invitedIds.has(gig._id);
+              const isInviting = invitingId === gig._id;
+              return (
+                <div
+                  key={gig._id}
+                  className="flex items-center justify-between p-3 rounded-xl border border-slate-200"
+                >
+                  <div className="min-w-0 pr-3">
+                    <p className="font-medium text-slate-900 text-sm truncate">
+                      {gig.title}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {gig.budget?.budgetType === "fixed"
+                        ? `$${gig.budget?.min}–$${gig.budget?.max} fixed`
+                        : `$${gig.budget?.min}–$${gig.budget?.max}/hr`}
+                    </p>
+                  </div>
+                  <button
+                    disabled={isInvited || isInviting}
+                    onClick={() => handleInvite(gig._id)}
+                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 transition-colors"
+                  >
+                    {isInvited ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" /> Invited
+                      </>
+                    ) : isInviting ? (
+                      "Sending..."
+                    ) : (
+                      "Invite"
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+//-------------MAIN PAGE-------------------
+
 export default function ViewFreelancerProfile() {
   const { id } = useParams(); // 🚀 Dynamically extract dynamic professional ID from route parametrics
   const navigate = useNavigate();
@@ -34,6 +172,7 @@ export default function ViewFreelancerProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     fetchFreelancerProfile();
@@ -44,7 +183,7 @@ export default function ViewFreelancerProfile() {
       setLoading(true);
       setError("");
       const response = await getFreelancerById(id);
-      
+
       // Assumes extraction shape from the controller: res.data.freelancer
       setProfile(response.data?.freelancer || response.data);
     } catch (err) {
@@ -94,18 +233,31 @@ export default function ViewFreelancerProfile() {
     );
   }
 
+  // The freelancer's User._id — invitedFreelancers on Gig refs "User", not FreelancerProfile
+  const freelancerUserId = profile.user?._id || profile.user;
+
   return (
     <DashboardLayout>
       <div className="p-8 bg-slate-50/50 min-h-screen">
         
-        {/* Navigation Breadcrumb */}
-        <button 
-          onClick={() => navigate("/client/browse")} 
-          className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-blue-600 transition mb-6 uppercase tracking-wider"
-        >
-          <ChevronLeft size={16} />
-          <span>Back to Talents</span>
-        </button>
+        {/* Navigation Breadcrumb + Invite action */}
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => navigate("/client/browse")} 
+            className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-blue-600 transition uppercase tracking-wider"
+          >
+            <ChevronLeft size={16} />
+            <span>Back to Talents</span>
+          </button>
+
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors"
+          >
+            <Send size={14} />
+            Send Invitation
+          </button>
+        </div>
 
         {/* Dynamic Read-Only Header */}
         <ProfileHeader
@@ -317,6 +469,13 @@ export default function ViewFreelancerProfile() {
 
         </div>
       </div>
+
+      {showInviteModal && (
+        <InviteToGigModal
+          freelancerUserId={freelancerUserId}
+          onClose={() => setShowInviteModal(false)}
+        />
+      )}
     </DashboardLayout>
   );
 }
