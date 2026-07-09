@@ -129,12 +129,12 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile }) {
         </div>
 
         {/* Edit Button */}
-        {user.role === 'freelancer' && (<button
+        <button
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition font-medium"
           onClick={() => setIsEditing(true)}
         >
           {isEditing ? "Save Profile" : "Edit Profile"}
-        </button>)}
+        </button>
       </div>
 
       {/* Completion Bar */}

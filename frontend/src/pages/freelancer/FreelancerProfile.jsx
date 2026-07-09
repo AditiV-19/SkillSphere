@@ -59,7 +59,7 @@ export default function FreelancerProfile() {
 
   const handleSubmit = async (formData) => {
     try {
-      const response = await updateProfile(formData);
+      const response = await updateProfile(formData, profile.user?.role);
 
       console.log("UPDATED PROFILE:", response.data);
 
