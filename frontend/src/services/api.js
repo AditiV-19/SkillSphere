@@ -112,12 +112,19 @@ export const getCompanyApplicationsDeck = () => {
   return API.get("/client/gig/applications/all"); 
 };
 
-// Assigned Gigs for freelancer
+// Assigned Gigs for freelancer and Active gigs for client
 export const getAssignedGigs = () => {
   return API.get("/client/gig/freelancer/assigned-gigs");
 };
+export const getActiveGigs = () => {
+  return API.get("/client/gig/client/active-gigs");
+}
+
 
 // Track progress
-export const getGigProgress = (gigId) => api.get(`/gigs/${gigId}/progress`);
-export const updateMilestoneStatus = (gigId, milestoneId, status) =>
-  api.patch(`/gigs/${gigId}/milestones/${milestoneId}`, { status });
+export const getGigProgress = (gigId) => {
+  return API.get(`/client/gig/${gigId}/progress`);
+}
+export const updateMilestoneStatus = (gigId, milestoneId, status) =>{
+    return API.patch(`/client/gig/${gigId}/milestones/${milestoneId}`, { status });
+  }

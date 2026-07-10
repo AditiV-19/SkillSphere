@@ -2,15 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAssignedGigs } from "../../services/api";
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
-import { 
-  Briefcase, 
-  IndianRupee, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  FolderGit2, 
+import {
+  IndianRupee,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  FolderGit2,
   ArrowUpRight,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 
 export default function AssignedGigs() {
@@ -27,7 +26,7 @@ export default function AssignedGigs() {
     try {
       setLoading(true);
       const res = await getAssignedGigs();
-      console.log(res)
+      console.log(res.data.gigs)
       setAssignedGigs(res.data?.gigs || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to sync active contract workspace.");
@@ -49,7 +48,7 @@ export default function AssignedGigs() {
   return (
     <DashboardLayout>
       <div className="p-8 bg-slate-50/50 min-h-screen">
-        
+
         {/* Header Block */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
@@ -70,12 +69,12 @@ export default function AssignedGigs() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assignedGigs.map((contract) => {
             // Safe fallback value defaults for tracking metric fields
-            const progress = contract.progressPercentage || 0;
+            const progress = contract.completionPercentage || 0;
             const companyName = contract.client?.companyName || "Verified Client";
 
             return (
-              <div 
-                key={contract._id} 
+              <div
+                key={contract._id}
                 className="bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
               >
                 {/* Visual Accent Banner Block based on status */}
@@ -112,7 +111,7 @@ export default function AssignedGigs() {
                     </div>
                     {/* Background track indicator bar */}
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-blue-600 rounded-full transition-all duration-500"
                         style={{ width: `${progress}%` }}
                       />
@@ -123,11 +122,15 @@ export default function AssignedGigs() {
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs font-semibold text-slate-500">
                     <div className="flex items-center gap-1 bg-slate-50 p-2 rounded-xl border border-slate-100/60">
                       <IndianRupee size={13} className="text-emerald-600 shrink-0" />
-                      <span className="truncate">₹{contract.budget?.max || contract.budget}</span>
+                      <span className="truncate">
+                        ₹{contract.budget?.min}–₹{contract.budget?.max}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 bg-slate-50 p-2 rounded-xl border border-slate-100/60">
                       <Clock size={13} className="text-blue-600 shrink-0" />
-                      <span className="truncate">Active Shift</span>
+                      <span className="truncate capitalize">
+                        {contract.status?.replace("_", " ") || "Active"}
+                      </span>
                     </div>
                   </div>
                 </div>

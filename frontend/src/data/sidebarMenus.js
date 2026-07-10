@@ -12,6 +12,7 @@ import {
   FaPlusCircle,
   FaTasks,
   FaEnvelopeOpen,
+  FaSpinner,
 } from "react-icons/fa";
 
 export const sidebarMenus = {
@@ -80,6 +81,11 @@ export const sidebarMenus = {
       label: "Marketplace",
       icon: FaBriefcase,
       route: "/client/marketplace",
+    },
+     {
+      label: "Track Progress",
+      icon: FaSpinner,
+      route: "/client/assigned-gigs",
     },
     {
       label: "Post Project",

@@ -645,21 +645,61 @@ export const getFreelancerAssignedGigs = async (req, res) => {
   }
 };
 
+// Active Client Gigs
+export const getActiveGigs = async (req, res) => {
+  try {
+    const clientProfile = await ClientProfile.findOne({ user: req.user.id });
+    if (!clientProfile) return res.status(404).json({ message: "Client profile not found" });
+
+    const gigs = await Gig.find({
+      client: clientProfile._id,
+      status: { $in: ["in_progress", "completed"] }, // only gigs with someone actually assigned
+    })
+      .populate("assignedFreelancer", "firstName lastName profilePicture headline")
+      .sort({ createdAt: -1 });
+
+    const withProgress = gigs.map((gig) => {
+      const total = gig.milestones.length;
+      const completed = gig.milestones.filter((m) => m.status === "completed").length;
+      return {
+        ...gig.toObject(),
+        completionPercentage: total ? Math.round((completed / total) * 100) : 0,
+      };
+    });
+
+    res.json({ success: true, gigs: withProgress });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch active gigs" });
+  }
+};
+
 
 // Milestone Status
 
-// GET /api/v1/gigs/:gigId/progress — client-only, read-only
 export const getGigProgress = async (req, res) => {
   try {
     const { gigId } = req.params;
+
     const gig = await Gig.findById(gigId)
       .select("title status milestones client assignedFreelancer")
       .populate("assignedFreelancer", "firstName lastName profilePicture");
 
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    const clientProfile = await ClientProfile.findOne({ user: req.user.id });
-    if (!clientProfile || gig.client.toString() !== clientProfile._id.toString()) {
+    // Case 1: requester is the assigned freelancer
+    const isAssignedFreelancer =
+      gig.assignedFreelancer && gig.assignedFreelancer._id.toString() === req.user.id;
+
+    // Case 2: requester is a client — but only the ONE client who owns this gig
+    let isOwningClient = false;
+    if (req.user.role === "client") {
+      const clientProfile = await ClientProfile.findOne({ user: req.user.id });
+      isOwningClient =
+        clientProfile && gig.client.toString() === clientProfile._id.toString();
+    }
+
+    if (!isAssignedFreelancer && !isOwningClient) {
       return res.status(403).json({ message: "Not authorized to view this gig's progress" });
     }
 
@@ -684,7 +724,8 @@ export const getGigProgress = async (req, res) => {
   }
 };
 
-// PATCH /api/v1/gigs/:gigId/milestones/:milestoneId — freelancer-only
+
+
 export const updateMilestoneStatus = async (req, res) => {
   try {
     const { gigId, milestoneId } = req.params;

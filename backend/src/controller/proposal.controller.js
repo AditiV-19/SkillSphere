@@ -1,6 +1,6 @@
 import { Proposal } from "../models/proposal.model.js";
 import { Gig } from "../models/gig.model.js";
-import { ClientProfile } from "../models/profile.model.js"
+import { ClientProfile } from "../models/profile.model.js";
 
 export const applyToGig = async (req, res) => {
   try {
@@ -117,14 +117,28 @@ export const updateProposalStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status parameter." });
     }
 
+    // 1. Update the target proposal status document
     const proposal = await Proposal.findByIdAndUpdate(
       proposalId,
       { status },
-      { returnDocument: 'after' },
+      { returnDocument: "after" },
     );
 
-    if (!proposal)
+    if (!proposal) {
       return res.status(404).json({ message: "Proposal record not found." });
+    }
+
+    // 🚀 THE CRITICAL ADDITION: Sync parent Gig parameters automatically on acceptance
+    if (status === "accepted") {
+      await Gig.findByIdAndUpdate(
+        proposal.gig, // Maps to the parent Gig ObjectID attached to this proposal
+        {
+          assignedFreelancer: proposal.freelancerUser, // Assign the freelancer's User ID
+          status: "in_progress", // Advance status to trigger client matching
+        },
+        { returnDocument: "after" },
+      );
+    }
 
     return res.json({
       success: true,
@@ -174,11 +188,9 @@ export const getCompanyAllApplications = async (req, res) => {
     });
   } catch (error) {
     console.error("Dashboard database breakdown:", error);
-    return res
-      .status(500)
-      .json({
-        message: "Server error packaging company data deck",
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: "Server error packaging company data deck",
+      error: error.message,
+    });
   }
 };

@@ -3,7 +3,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/uploadImage.js"
 import { clientOnly, freelancerOnly } from "../middleware/role.middleware.js";
-import { createGig, getGigById, getGigs, updateGig, deleteGig, inviteFreelancer, uninviteFreelancer, getFreelancerInvitations, getGigProgress, updateMilestoneStatus, getFreelancerAssignedGigs } from "../controller/gig.controller.js";
+import { createGig, getGigById, getGigs, updateGig, deleteGig, inviteFreelancer, uninviteFreelancer, getFreelancerInvitations, getGigProgress, updateMilestoneStatus, getFreelancerAssignedGigs, getActiveGigs } from "../controller/gig.controller.js";
 import { applyToGig, getCompanyAllApplications, getFreelancerApplications, updateFreelancerProposal, updateProposalStatus } from "../controller/proposal.controller.js";
 
 const router = Router();
@@ -31,10 +31,10 @@ router.patch("/proposals/:proposalId/status", authMiddleware, clientOnly, update
 
 //Assigned Gigs
 router.get("/freelancer/assigned-gigs", authMiddleware, freelancerOnly, getFreelancerAssignedGigs);
-
+router.get("/client/active-gigs", authMiddleware, clientOnly, getActiveGigs);
 
 // Milestone Status
-router.get("/:gigId/progress", authMiddleware, clientOnly, getGigProgress);
+router.get("/:gigId/progress", authMiddleware, getGigProgress);
 router.patch("/:gigId/milestones/:milestoneId", authMiddleware, freelancerOnly, updateMilestoneStatus);
 
 
