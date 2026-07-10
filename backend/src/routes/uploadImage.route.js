@@ -33,6 +33,21 @@ router.post("/resume", upload.single("resume"), async (req, res) => {
     }
 });
 
+router.post("/file", upload.single("file"), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+        
+        // Return the URL and ID
+        res.json({ 
+            url: req.file.path, 
+            publicId: req.file.filename 
+        });
+    } catch (error) {
+        console.error("File Upload Error:", error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+});
+
 // Catches errors thrown by multer/CloudinaryStorage before the route handler runs
 router.use((err, req, res, next) => {
     console.log("=== Multer/Cloudinary Error ===");

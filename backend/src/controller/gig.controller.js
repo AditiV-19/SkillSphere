@@ -754,3 +754,100 @@ export const updateMilestoneStatus = async (req, res) => {
     res.status(500).json({ message: "Failed to update milestone" });
   }
 };
+
+
+export const updateMilestoneDeadline = async (req, res) => {
+  try {
+    const { gigId, milestoneId } = req.params;
+    const { dueDate } = req.body; // pass null/"" to clear it
+    
+
+    const gig = await Gig.findById(gigId);
+    if (!gig) return res.status(404).json({ message: "Gig not found" });
+
+    const clientProfile = await ClientProfile.findOne({ user: req.user.id });
+    if (!clientProfile || gig.client.toString() !== clientProfile._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to edit this gig" });
+    }
+
+    const milestone = gig.milestones.id(milestoneId);
+    if (!milestone) return res.status(404).json({ message: "Milestone not found" });
+    
+    milestone.dueDate = dueDate || undefined;
+    await gig.save();
+
+    res.json({ success: true, milestone });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update milestone deadline" });
+  }
+};
+
+
+export const addProgressLog = async (req, res) => {
+  try {
+    const { gigId } = req.params;
+    const { message, milestoneId, fileUrl, fileName } = req.body;
+
+    if (!message?.trim()) {
+      return res.status(400).json({ message: "Log message is required" });
+    }
+
+    const gig = await Gig.findById(gigId);
+    if (!gig) return res.status(404).json({ message: "Gig not found" });
+
+    if (!gig.assignedFreelancer || gig.assignedFreelancer.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Only the assigned freelancer can post progress updates" });
+    }
+
+    gig.progressLogs.push({
+      author: req.user.id,
+      message: message.trim(),
+      milestone: milestoneId || undefined,
+      fileUrl: fileUrl || "",
+      fileName: fileName || "",
+    });
+
+    await gig.save();
+
+    const newLog = gig.progressLogs[gig.progressLogs.length - 1];
+    res.json({ success: true, log: newLog });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add progress log" });
+  }
+};
+
+
+export const getProgressLogs = async (req, res) => {
+  try {
+    const { gigId } = req.params;
+    const gig = await Gig.findById(gigId)
+      .select("client assignedFreelancer progressLogs")
+      .populate("progressLogs.author", "firstName lastName profilePicture");
+
+    if (!gig) return res.status(404).json({ message: "Gig not found" });
+
+    const isAssignedFreelancer =
+      gig.assignedFreelancer && gig.assignedFreelancer.toString() === req.user.id;
+
+    let isOwningClient = false;
+    if (req.user.role === "client") {
+      const clientProfile = await ClientProfile.findOne({ user: req.user.id });
+      isOwningClient = clientProfile && gig.client.toString() === clientProfile._id.toString();
+    }
+
+    if (!isAssignedFreelancer && !isOwningClient) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const sortedLogs = [...gig.progressLogs].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
+
+    res.json({ success: true, logs: sortedLogs });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch progress logs" });
+  }
+};

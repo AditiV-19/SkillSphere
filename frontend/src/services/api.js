@@ -128,3 +128,21 @@ export const getGigProgress = (gigId) => {
 export const updateMilestoneStatus = (gigId, milestoneId, status) =>{
     return API.patch(`/client/gig/${gigId}/milestones/${milestoneId}`, { status });
   }
+
+export const uploadProjectFile = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return API.post("/users/upload/file", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const updateMilestoneDeadline = (gigId, milestoneId, dueDate) => {
+  return API.patch(`/client/gig/${gigId}/milestones/${milestoneId}/deadline`, { dueDate });
+}
+export const addProgressLog = (gigId, payload) => {
+  return API.post(`/client/gig/${gigId}/logs`, payload);
+}
+export const getProgressLogs = (gigId) => {
+  return API.get(`/client/gig/${gigId}/logs`);
+}

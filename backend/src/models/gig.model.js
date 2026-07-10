@@ -71,6 +71,7 @@ const gigSchema = new Schema(
         },
         dueDate: {
           type: Date,
+          default: "",
         },
         status: {
           type: String,
@@ -146,6 +147,17 @@ const gigSchema = new Schema(
       min: 0,
       max: 100,
     },
+    
+    progressLogs: [
+  {
+    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    message: { type: String, required: true, maxlength: 1000 },
+    milestone: { type: Schema.Types.ObjectId }, // optional — which milestone this update relates to
+    fileUrl: { type: String, default: "" },
+    fileName: { type: String, default: "" },
+    createdAt: { type: Date, default: Date.now },
+  },
+],
   },
   {
     timestamps: true,
