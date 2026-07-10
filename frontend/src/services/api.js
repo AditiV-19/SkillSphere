@@ -111,3 +111,13 @@ export const updateProposalStatus = (proposalId, status) => {
 export const getCompanyApplicationsDeck = () => {
   return API.get("/client/gig/applications/all"); 
 };
+
+// Assigned Gigs for freelancer
+export const getAssignedGigs = () => {
+  return API.get("/client/gig/freelancer/assigned-gigs");
+};
+
+// Track progress
+export const getGigProgress = (gigId) => api.get(`/gigs/${gigId}/progress`);
+export const updateMilestoneStatus = (gigId, milestoneId, status) =>
+  api.patch(`/gigs/${gigId}/milestones/${milestoneId}`, { status });

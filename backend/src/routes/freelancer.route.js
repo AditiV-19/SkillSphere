@@ -12,8 +12,4 @@ router.get("/", authMiddleware, freelancerOnly, getProfile);
 router.put("/", authMiddleware, freelancerOnly, updateProfile);
 router.delete("/", authMiddleware, freelancerOnly, deleteProfile);
 
-// router.post("/", authMiddleware, freelancerOnly, createProfile);
-// router.get("/", authMiddleware, freelancerOnly, getProfile);
-// router.put("/", authMiddleware, freelancerOnly, updateProfile);
-// router.delete("/", authMiddleware, freelancerOnly, deleteProfile);
 export default router;

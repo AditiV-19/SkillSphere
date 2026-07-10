@@ -15,8 +15,8 @@ const gigSchema = new Schema(
       type: String,
       required: true,
       trim: true,
-      minlength:5,
-    maxlength:120
+      minlength: 5,
+      maxlength: 120,
     },
 
     description: {
@@ -47,7 +47,7 @@ const gigSchema = new Schema(
         enum: ["fixed", "hourly"],
         required: true,
       },
-      min: { type: Number, required: true, min:0 },
+      min: { type: Number, required: true, min: 0 },
       max: {
         type: Number,
         required: true,
@@ -135,11 +135,17 @@ const gigSchema = new Schema(
       default: 0,
     },
     attachments: [
-    {
-      url: { type: String, required: true },
-      name: { type: String, required: true }
-    }
-  ],
+      {
+        url: { type: String, required: true },
+        name: { type: String, required: true },
+      },
+    ],
+    progressPercentage: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
   },
   {
     timestamps: true,
@@ -147,7 +153,7 @@ const gigSchema = new Schema(
 );
 
 // Enable Geospatial Queries for Hyperlocal Search [cite: 3, 107]
-gigSchema.index({ "location.geo": "2dsphere" }, { sparse: true});
+gigSchema.index({ "location.geo": "2dsphere" }, { sparse: true });
 
 // Compound text index to handle advanced string matches on Title and Skills
 gigSchema.index({ skillsRequired: 1 });

@@ -19,6 +19,7 @@ import Invitations from './pages/freelancer/Invitations'
 import GigDetails from './pages/freelancer/GigDetails'
 import FreelancerGigApplications from './pages/freelancer/FreelancerGigApplications'
 import ClientGigApplications from './pages/client/ClientGigApplications'
+import AssignedGigs from './pages/freelancer/AssignedGigs'
 
 
 export default function App(){
@@ -142,6 +143,12 @@ export default function App(){
              <Route path="/client/gig/applications" element={
                 <ProtectedRoute allowedRoles={["client"]}>
                     <ClientGigApplications />
+                </ProtectedRoute>
+            } />
+
+            <Route path="/freelancer/assigned-gigs" element={
+                <ProtectedRoute allowedRoles={["freelancer"]}>
+                    <AssignedGigs />
                 </ProtectedRoute>
             } />
            

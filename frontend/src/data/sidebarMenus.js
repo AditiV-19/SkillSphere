@@ -35,6 +35,12 @@ export const sidebarMenus = {
     },
 
     {
+      label: "Assigned Gigs",
+      icon: FaTasks,
+      route: "/freelancer/assigned-gigs",
+    },
+
+    {
       label: "Marketplace",
       icon: FaBriefcase,
       route: "/client/marketplace",
