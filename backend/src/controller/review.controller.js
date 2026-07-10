@@ -10,7 +10,9 @@ export const createReview = async (req, res) => {
 
     // 1. Basic validation
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5" });
     }
 
     // 2. Fraud & Verification: gig must exist and be completed
@@ -19,7 +21,9 @@ export const createReview = async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
     if (gig.status !== "completed") {
-      return res.status(400).json({ message: "You can only review completed projects." });
+      return res
+        .status(400)
+        .json({ message: "You can only review completed projects." });
     }
 
     // 3. Determine which role the requester actually is on THIS gig,
@@ -31,10 +35,13 @@ export const createReview = async (req, res) => {
 
     const isClient = clientProfile.user.toString() === reviewerUserId;
     const isFreelancer =
-      gig.assignedFreelancer && gig.assignedFreelancer.toString() === reviewerUserId;
+      gig.assignedFreelancer &&
+      gig.assignedFreelancer.toString() === reviewerUserId;
 
     if (!isClient && !isFreelancer) {
-      return res.status(403).json({ message: "You are not authorized to review this project." });
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to review this project." });
     }
 
     // The only legitimate reviewee is "the other party on this specific gig" —
@@ -44,12 +51,26 @@ export const createReview = async (req, res) => {
       : clientProfile.user.toString();
 
     if (!expectedRevieweeId || revieweeId !== expectedRevieweeId) {
-      return res.status(400).json({ message: "You can only review the other party on this project." });
+      return res.status(400).json({
+        message: "You can only review the other party on this project.",
+      });
     }
 
     if (reviewerUserId === revieweeId) {
-      return res.status(400).json({ message: "You cannot leave a review for yourself." });
+      return res
+        .status(400)
+        .json({ message: "You cannot leave a review for yourself." });
     }
+
+    const calculateWeight = (budget) => {
+      if (budget < 5000) return 1;
+
+      if (budget <= 20000) return 2;
+
+      return 3;
+    };
+
+    const weight = calculateWeight(gig.budget);
 
     // 4. Create the review (compound unique index on {project, reviewer} protects against duplicates)
     const review = await Review.create({
@@ -57,37 +78,55 @@ export const createReview = async (req, res) => {
       reviewer: reviewerUserId,
       reviewee: revieweeId,
       rating,
+      weight,
       comment,
     });
 
     // 5. Recalculate weighted reputation
     const allReviewsForUser = await Review.find({ reviewee: revieweeId });
-    const totalRatingSum = allReviewsForUser.reduce((sum, rev) => sum + rev.rating, 0);
-    const averageRating = (totalRatingSum / allReviewsForUser.length).toFixed(2);
+    const totalRatingSum = allReviewsForUser.reduce(
+      (sum, rev) => sum + rev.rating,
+      0,
+    );
+    const averageRating = (totalRatingSum / allReviewsForUser.length).toFixed(
+      2,
+    );
+
+    let weightedSum = 0;
+    let totalWeight = 0;
+
+    allReviewsForUser.forEach((review) => {
+      weightedSum += review.rating * review.weight;
+      totalWeight += review.weight;
+    });
+
+    const weightedRating = totalWeight === 0 ? 0 : weightedSum / totalWeight;
 
     if (isClient) {
       // The client left this review -> The reviewee is the Freelancer.
       // We update the FreelancerProfile where the user field matches the revieweeId.
       await FreelancerProfile.findOneAndUpdate(
         { user: revieweeId },
-        { 
-          averageRating: Number(averageRating), 
+        {
+          averageRating: Number(averageRating),
+          weightedRating: Number(weightedRating),
           totalReviews: allReviewsForUser.length,
-          $inc: { totalRatings: 1 } // Tracking raw submissions independently
+          totalRatings: allReviewsForUser.length
         },
-        { new: true }
+        { returnDocument: "after" },
       );
     } else {
       // The freelancer left this review -> The reviewee is the Client.
       // We update the ClientProfile where the user field matches the revieweeId.
       await ClientProfile.findOneAndUpdate(
         { user: revieweeId },
-        { 
-          averageRating: Number(averageRating), 
+        {
+          averageRating: Number(averageRating),
+          weightedRating: Number(weightedRating),
           totalReviews: allReviewsForUser.length,
-          $inc: { totalRatings: 1 } 
+          totalRatings: allReviewsForUser.length
         },
-        { new: true }
+        { returnDocument: "after" },
       );
     }
 
@@ -99,9 +138,13 @@ export const createReview = async (req, res) => {
   } catch (error) {
     console.error("Review creation error:", error);
     if (error.code === 11000) {
-      return res.status(400).json({ message: "You have already reviewed this project asset." });
+      return res
+        .status(400)
+        .json({ message: "You have already reviewed this project asset." });
     }
-    return res.status(500).json({ message: "Failed to submit project review." });
+    return res
+      .status(500)
+      .json({ message: "Failed to submit project review." });
   }
 };
 
@@ -123,7 +166,6 @@ export const getUserReviews = async (req, res) => {
   }
 };
 
-
 export const getGigReviewStatus = async (req, res) => {
   try {
     const { gigId } = req.params;
@@ -131,18 +173,23 @@ export const getGigReviewStatus = async (req, res) => {
     const gig = await Gig.findById(gigId);
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    const isAssignedFreelancer = 
-      gig.assignedFreelancer && 
-      gig.assignedFreelancer.toString() === req.user.id
+    const isAssignedFreelancer =
+      gig.assignedFreelancer &&
+      gig.assignedFreelancer.toString() === req.user.id;
 
-      let isOwningClient = false;
+    let isOwningClient = false;
     if (req.user.role === "client") {
       const clientProfile = await ClientProfile.findOne({ user: req.user.id });
-      const gigClientProfileId = gig.client?._id ? gig.client._id.toString() : gig.client?.toString();
-      isOwningClient = clientProfile && gigClientProfileId === clientProfile._id.toString();
+      const gigClientProfileId = gig.client?._id
+        ? gig.client._id.toString()
+        : gig.client?.toString();
+      isOwningClient =
+        clientProfile && gigClientProfileId === clientProfile._id.toString();
     }
     if (!isAssignedFreelancer && !isOwningClient) {
-      return res.status(403).json({ message: "Not authorized to view review status" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to view review status" });
     }
 
     const review = await Review.findOne({

@@ -30,6 +30,11 @@ const reviewSchema = new mongoose.Schema(
       max: 5,
     },
 
+    weight: {
+      type: Number,
+      default: 1,
+    },
+
     comment: {
       type: String,
       trim: true,
@@ -41,7 +46,7 @@ const reviewSchema = new mongoose.Schema(
 );
 
 reviewSchema.index(
-{
+  {
     project: 1,
     reviewer: 1,
     reviewee: 1,

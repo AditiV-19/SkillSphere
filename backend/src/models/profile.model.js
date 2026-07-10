@@ -158,6 +158,13 @@ const freelancerSchema = new Schema(
       max: 5,
     },
 
+    weightedRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
     totalReviews: {
       type: Number,
       default: 0,
@@ -338,6 +345,13 @@ const clientSchema = new Schema(
     // REPUTATION
     // ===========================
     averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
+    weightedRating: {
       type: Number,
       default: 0,
       min: 0,
