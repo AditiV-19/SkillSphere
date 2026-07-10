@@ -161,3 +161,9 @@ export const getGigReviewStatus = (gigId) => {
 export const getReviewAnalytics = (userId) => {
   return API.get(`/reviews/analytics/${userId}`);
 }
+
+
+//Search
+export const searchFreelancers = (params) => {
+  return API.get("/profile/freelancer/search", { params });
+};

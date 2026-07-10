@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { createProfile, getProfile, updateProfile, deleteProfile } from "../controller/freelancerProfile.controller.js";
+import { createProfile, getProfile, updateProfile, deleteProfile, searchFreelancers } from "../controller/freelancerProfile.controller.js";
 
 import { freelancerOnly } from "../middleware/role.middleware.js";
 
@@ -12,4 +12,5 @@ router.get("/", authMiddleware, freelancerOnly, getProfile);
 router.put("/", authMiddleware, freelancerOnly, updateProfile);
 router.delete("/", authMiddleware, freelancerOnly, deleteProfile);
 
+router.get("/search", authMiddleware, searchFreelancers);
 export default router;
