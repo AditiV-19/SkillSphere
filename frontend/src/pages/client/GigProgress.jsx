@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 // Added updateMilestoneDeadline (or replace with your generic updateGig route)
-import { getGigProgress, getProgressLogs, updateMilestoneDeadline } from "../../services/api";
+import { getGigProgress, getGigReviewStatus, getProgressLogs, updateMilestoneDeadline } from "../../services/api";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import SectionCard from "../../components/profile/SectionCard";
@@ -19,6 +19,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import SubmitReviewForm from "../../components/SubmitReviewForm";
 
 const statusStyles = {
   completed: { dot: "bg-emerald-600", label: "bg-emerald-50 text-emerald-700" },
@@ -123,6 +124,7 @@ export default function GigProgress() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [hasReviewed, setHasReviewed] = useState(false);
   // Managing local editing states for deadlines
   const [editingMilestoneId, setEditingMilestoneId] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
@@ -133,22 +135,26 @@ export default function GigProgress() {
   }, [gigId]);
 
   const fetchProgress = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const [progressRes, logsRes] = await Promise.all([
-        getGigProgress(gigId),
-        getProgressLogs(gigId),
-      ]);
-      setGig(progressRes.data.gig);
-      setLogs(logsRes.data.logs || []);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Failed to load progress.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    setError("");
+
+    const [progressRes, logsRes, reviewRes] = await Promise.all([
+      getGigProgress(gigId),
+      getProgressLogs(gigId),
+      getGigReviewStatus(gigId), // add this API
+    ]);
+
+    setGig(progressRes.data.gig);
+    setLogs(logsRes.data.logs || []);
+    setHasReviewed(reviewRes.data.hasReviewed);
+  } catch (err) {
+    console.error(err);
+    setError(err.response?.data?.message || "Failed to load progress.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleStartEdit = (milestone) => {
     setEditingMilestoneId(milestone._id);
@@ -360,6 +366,20 @@ export default function GigProgress() {
           <SectionCard title="Progress Updates">
             <ProgressLogFeed logs={logs} />
           </SectionCard>
+          {/* Module 8 — Smart Reputation & Review System (Client Reviewing Freelancer) */}
+{gig.status === "completed" && (
+  <div className="mt-6">
+    <SectionCard title="Rate the Freelancer">
+      <SubmitReviewForm
+        projectId={gig._id}
+        revieweeId={gig.assignedFreelancer._id || gig.assignedFreelancer}
+        revieweeName={`${gig.assignedFreelancer.firstName} ${gig.assignedFreelancer.lastName}`}
+        onReviewed={() => setHasReviewed(true)}
+        hasReviewed = {hasReviewed}
+      />
+    </SectionCard>
+  </div>
+)}
         </div>
       </div>
     </DashboardLayout>

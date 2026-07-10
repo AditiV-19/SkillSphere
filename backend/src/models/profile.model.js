@@ -147,10 +147,29 @@ const freelancerSchema = new Schema(
 
       default: 0,
     },
+    // ===========================
+    // REPUTATION
+    // ===========================
+
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
+
+    totalRatings: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );
-
 
 const clientSchema = new Schema(
   {
@@ -215,18 +234,12 @@ const clientSchema = new Schema(
 
     foundedYear: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     companySize: {
       type: String,
-      enum: [
-        "1-10",
-        "11-50",
-        "51-200",
-        "201-500",
-        "500+",
-      ],
+      enum: ["1-10", "11-50", "51-200", "201-500", "500+"],
     },
 
     location: {
@@ -393,7 +406,7 @@ const clientSchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const adminSchema = new Schema({

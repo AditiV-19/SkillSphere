@@ -269,7 +269,7 @@ export const getGigById = async (req, res) => {
     return res.status(200).json({
       success: true,
       gig,
-      hasApplied
+      hasApplied,
     });
   } catch (error) {
     return res.status(500).json({
@@ -387,7 +387,7 @@ export const updateGig = async (req, res) => {
         $set: updateData,
       },
       {
-        returnDocument: 'after',
+        returnDocument: "after",
         runValidators: true,
       },
     );
@@ -498,7 +498,7 @@ export const inviteFreelancer = async (req, res) => {
       {
         $addToSet: { invitedFreelancers: freelancerUserId },
       },
-      { returnDocument: 'after' }, // Returns the modified document if needed
+      { returnDocument: "after" }, // Returns the modified document if needed
     );
 
     // 3. Handle errors if the query failed to match a document
@@ -525,12 +525,10 @@ export const inviteFreelancer = async (req, res) => {
       gig: updatedGig,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        message: "Server error during invitation",
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: "Server error during invitation",
+      error: error.message,
+    });
   }
 };
 
@@ -556,7 +554,7 @@ export const uninviteFreelancer = async (req, res) => {
       {
         $pull: { invitedFreelancers: freelancerUserId },
       },
-      { returnDocument: 'after' },
+      { returnDocument: "after" },
     );
 
     // 3. Handle errors if the query failed to match a document
@@ -570,12 +568,10 @@ export const uninviteFreelancer = async (req, res) => {
 
     return res.json({ message: "Invite removed successfully" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        message: "Server error while removing invite",
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: "Server error while removing invite",
+      error: error.message,
+    });
   }
 };
 
@@ -611,18 +607,18 @@ export const getFreelancerAssignedGigs = async (req, res) => {
     // req.user.id is populated automatically by your authMiddleware
     const acceptedProposals = await Proposal.find({
       freelancerUser: req.user.id,
-      status: "accepted"
+      status: "accepted",
     }).select("gig"); // We only need the gig IDs to perform the secondary lookup
 
     if (!acceptedProposals || acceptedProposals.length === 0) {
       return res.json({
         success: true,
-        gigs: []
+        gigs: [],
       });
     }
 
     // 2. Extract out all unique Gig ObjectIDs from those accepted proposals
-    const assignedGigIds = acceptedProposals.map(proposal => proposal.gig);
+    const assignedGigIds = acceptedProposals.map((proposal) => proposal.gig);
 
     // 3. Fetch the full details of those specific gigs
     // We populate the client field to show the company details on the frontend cards
@@ -633,14 +629,14 @@ export const getFreelancerAssignedGigs = async (req, res) => {
     return res.json({
       success: true,
       count: gigs.length,
-      gigs
+      gigs,
     });
   } catch (error) {
     console.error("Error fetching assigned gigs:", error);
     return res.status(500).json({
       success: false,
       message: "Server error gathering contract workspace files.",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -649,18 +645,24 @@ export const getFreelancerAssignedGigs = async (req, res) => {
 export const getActiveGigs = async (req, res) => {
   try {
     const clientProfile = await ClientProfile.findOne({ user: req.user.id });
-    if (!clientProfile) return res.status(404).json({ message: "Client profile not found" });
+    if (!clientProfile)
+      return res.status(404).json({ message: "Client profile not found" });
 
     const gigs = await Gig.find({
       client: clientProfile._id,
       status: { $in: ["in_progress", "completed"] }, // only gigs with someone actually assigned
     })
-      .populate("assignedFreelancer", "firstName lastName profilePicture headline")
+      .populate(
+        "assignedFreelancer",
+        "firstName lastName profilePicture headline",
+      )
       .sort({ createdAt: -1 });
 
     const withProgress = gigs.map((gig) => {
       const total = gig.milestones.length;
-      const completed = gig.milestones.filter((m) => m.status === "completed").length;
+      const completed = gig.milestones.filter(
+        (m) => m.status === "completed",
+      ).length;
       return {
         ...gig.toObject(),
         completionPercentage: total ? Math.round((completed / total) * 100) : 0,
@@ -674,7 +676,6 @@ export const getActiveGigs = async (req, res) => {
   }
 };
 
-
 // Milestone Status
 
 export const getGigProgress = async (req, res) => {
@@ -683,20 +684,23 @@ export const getGigProgress = async (req, res) => {
 
     const gig = await Gig.findById(gigId)
       .select("title status milestones client assignedFreelancer")
-      .populate("assignedFreelancer", "firstName lastName profilePicture");
+      .populate("assignedFreelancer", "firstName lastName profilePicture")
+      .populate({
+        path: "client",
+        select: "companyName companyLogo user",
+        populate: { path: "user", select: "firstName lastName" },
+      });
 
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    // Case 1: requester is the assigned freelancer
-    const isAssignedFreelancer =
-      gig.assignedFreelancer && gig.assignedFreelancer._id.toString() === req.user.id;
+    const assignedFreelancerId = gig.assignedFreelancer?._id?.toString?.() || gig.assignedFreelancer?.toString();
+    const isAssignedFreelancer = assignedFreelancerId === req.user.id;
 
-    // Case 2: requester is a client — but only the ONE client who owns this gig
     let isOwningClient = false;
     if (req.user.role === "client") {
       const clientProfile = await ClientProfile.findOne({ user: req.user.id });
-      isOwningClient =
-        clientProfile && gig.client.toString() === clientProfile._id.toString();
+      const gigClientProfileId = gig.client?._id?.toString?.() || gig.client?.toString();
+      isOwningClient = clientProfile && gigClientProfileId === clientProfile._id.toString();
     }
 
     if (!isAssignedFreelancer && !isOwningClient) {
@@ -714,6 +718,7 @@ export const getGigProgress = async (req, res) => {
         title: gig.title,
         status: gig.status,
         assignedFreelancer: gig.assignedFreelancer,
+        client: gig.client,
         milestones: gig.milestones,
         completionPercentage,
       },
@@ -723,8 +728,6 @@ export const getGigProgress = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch gig progress" });
   }
 };
-
-
 
 export const updateMilestoneStatus = async (req, res) => {
   try {
@@ -738,41 +741,71 @@ export const updateMilestoneStatus = async (req, res) => {
     const gig = await Gig.findById(gigId);
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    if (!gig.assignedFreelancer || gig.assignedFreelancer.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Only the assigned freelancer can update milestones" });
+    if (
+      !gig.assignedFreelancer ||
+      gig.assignedFreelancer.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        message: "Only the assigned freelancer can update milestones",
+      });
     }
 
     const milestone = gig.milestones.id(milestoneId);
-    if (!milestone) return res.status(404).json({ message: "Milestone not found" });
+    if (!milestone)
+      return res.status(404).json({ message: "Milestone not found" });
 
     milestone.status = status;
+    const totalMilestones = gig.milestones.length;
+
+    const completedMilestones = gig.milestones.filter(
+      (m) => m.status === "completed",
+    ).length;
+
+    if (completedMilestones === totalMilestones) {
+      gig.status = "completed";
+    } else {
+      gig.status = "in_progress";
+    }
+    const completionPercentage = totalMilestones
+      ? Math.round((completedMilestones / totalMilestones) * 100)
+      : 0;
+
     await gig.save();
 
-    res.json({ success: true, milestone });
+    res.json({
+      success: true,
+      milestone,
+      gigStatus: gig.status,
+      completionPercentage,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to update milestone" });
   }
 };
 
-
 export const updateMilestoneDeadline = async (req, res) => {
   try {
     const { gigId, milestoneId } = req.params;
     const { dueDate } = req.body; // pass null/"" to clear it
-    
 
     const gig = await Gig.findById(gigId);
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
     const clientProfile = await ClientProfile.findOne({ user: req.user.id });
-    if (!clientProfile || gig.client.toString() !== clientProfile._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to edit this gig" });
+    if (
+      !clientProfile ||
+      gig.client.toString() !== clientProfile._id.toString()
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to edit this gig" });
     }
 
     const milestone = gig.milestones.id(milestoneId);
-    if (!milestone) return res.status(404).json({ message: "Milestone not found" });
-    
+    if (!milestone)
+      return res.status(404).json({ message: "Milestone not found" });
+
     milestone.dueDate = dueDate || undefined;
     await gig.save();
 
@@ -782,7 +815,6 @@ export const updateMilestoneDeadline = async (req, res) => {
     res.status(500).json({ message: "Failed to update milestone deadline" });
   }
 };
-
 
 export const addProgressLog = async (req, res) => {
   try {
@@ -796,8 +828,13 @@ export const addProgressLog = async (req, res) => {
     const gig = await Gig.findById(gigId);
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    if (!gig.assignedFreelancer || gig.assignedFreelancer.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Only the assigned freelancer can post progress updates" });
+    if (
+      !gig.assignedFreelancer ||
+      gig.assignedFreelancer.toString() !== req.user.id
+    ) {
+      return res.status(403).json({
+        message: "Only the assigned freelancer can post progress updates",
+      });
     }
 
     gig.progressLogs.push({
@@ -818,7 +855,6 @@ export const addProgressLog = async (req, res) => {
   }
 };
 
-
 export const getProgressLogs = async (req, res) => {
   try {
     const { gigId } = req.params;
@@ -829,12 +865,14 @@ export const getProgressLogs = async (req, res) => {
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
     const isAssignedFreelancer =
-      gig.assignedFreelancer && gig.assignedFreelancer.toString() === req.user.id;
+      gig.assignedFreelancer &&
+      gig.assignedFreelancer.toString() === req.user.id;
 
     let isOwningClient = false;
     if (req.user.role === "client") {
       const clientProfile = await ClientProfile.findOne({ user: req.user.id });
-      isOwningClient = clientProfile && gig.client.toString() === clientProfile._id.toString();
+      isOwningClient =
+        clientProfile && gig.client.toString() === clientProfile._id.toString();
     }
 
     if (!isAssignedFreelancer && !isOwningClient) {

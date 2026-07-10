@@ -6,10 +6,12 @@ import {
   getProgressLogs,
   addProgressLog,
   uploadProjectFile,
+  getGigReviewStatus, // 💡 Imported optimized review status endpoint
 } from "../../services/api";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import SectionCard from "../../components/profile/SectionCard";
+import SubmitReviewForm from "../../components/SubmitReviewForm";
 
 import {
   ChevronLeft,
@@ -26,8 +28,6 @@ const statusStyles = {
   pending: { dot: "bg-slate-300", label: "bg-slate-100 text-slate-500" },
 };
 
-// Module 14 — Deadline reminders. Same helper as the client's GigProgress
-// page, kept in sync so both sides see identical badges.
 const getDeadlineBadge = (dueDate, status) => {
   if (status === "completed") return null;
 
@@ -68,9 +68,8 @@ const formatLogDate = (date) =>
     minute: "2-digit",
   });
 
-// Module 14 — Progress logs + file uploads. Freelancer can post an update
-// with an optional attached file; both roles see the resulting feed.
-function ProgressLogComposer({ gigId, onPosted }) {
+// Module 14 — Progress Composer (Cleaned from nested accidental code)
+function ProgressLogComposer({ gigId, onPosted, hasReviewed }) {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [posting, setPosting] = useState(false);
@@ -91,7 +90,11 @@ function ProgressLogComposer({ gigId, onPosted }) {
         fileName = file.name;
       }
 
-      const res = await addProgressLog(gigId, { message: message.trim(), fileUrl, fileName });
+      const res = await addProgressLog(gigId, {
+        message: message.trim(),
+        fileUrl,
+        fileName,
+      });
       onPosted(res.data.log);
       setMessage("");
       setFile(null);
@@ -104,6 +107,8 @@ function ProgressLogComposer({ gigId, onPosted }) {
   };
 
   return (
+    <>
+    {!hasReviewed && (
     <form onSubmit={handleSubmit} className="mb-6 space-y-2">
       <textarea
         value={message}
@@ -151,12 +156,16 @@ function ProgressLogComposer({ gigId, onPosted }) {
         </button>
       </div>
     </form>
+    )}
+    </>
   );
 }
 
 function ProgressLogFeed({ logs }) {
   if (!logs?.length) {
-    return <p className="text-sm text-slate-400">No progress updates posted yet.</p>;
+    return (
+      <p className="text-sm text-slate-400">No progress updates posted yet.</p>
+    );
   }
 
   return (
@@ -167,7 +176,9 @@ function ProgressLogFeed({ logs }) {
             <MessageSquare className="w-4 h-4 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-slate-400">{formatLogDate(log.createdAt)}</p>
+            <p className="text-xs text-slate-400">
+              {formatLogDate(log.createdAt)}
+            </p>
             <p className="text-sm text-slate-600 mt-0.5">{log.message}</p>
             {log.fileUrl && (
               <a
@@ -187,7 +198,7 @@ function ProgressLogFeed({ logs }) {
   );
 }
 
-function MilestoneStatusControl({ gigId, milestone, onUpdated }) {
+function MilestoneStatusControl({ gigId, milestone, onUpdated, hasReviewed }) {
   const [updating, setUpdating] = useState(false);
 
   const handleChange = async (e) => {
@@ -204,16 +215,20 @@ function MilestoneStatusControl({ gigId, milestone, onUpdated }) {
   };
 
   return (
-    <select
-      value={milestone.status}
-      onChange={handleChange}
-      disabled={updating}
-      className="text-xs font-semibold rounded-lg border border-slate-300 px-2 py-1 disabled:opacity-50"
-    >
-      <option value="pending">Pending</option>
-      <option value="in_progress">In Progress</option>
-      <option value="completed">Completed</option>
-    </select>
+    <>
+      {!hasReviewed && (
+        <select
+          value={milestone.status}
+          onChange={handleChange}
+          disabled={updating}
+          className="text-xs font-semibold rounded-lg border border-slate-300 px-2 py-1 disabled:opacity-50"
+        >
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      )}
+    </>
   );
 }
 
@@ -226,6 +241,8 @@ export default function GigWorkTracker() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [hasReviewed, setHasReviewed] = useState(false); // 💡 State correctly instantiated here
+
   useEffect(() => {
     fetchProgress();
   }, [gigId]);
@@ -234,12 +251,17 @@ export default function GigWorkTracker() {
     try {
       setLoading(true);
       setError("");
-      const [progressRes, logsRes] = await Promise.all([
+
+      // Centralized parallel fetching logic includes optimized check status route
+      const [progressRes, logsRes, reviewRes] = await Promise.all([
         getGigProgress(gigId),
         getProgressLogs(gigId),
+        getGigReviewStatus(gigId),
       ]);
+
       setGig(progressRes.data.gig);
       setLogs(logsRes.data.logs || []);
+      setHasReviewed(!!reviewRes.data.hasReviewed);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to load this contract.");
@@ -258,13 +280,29 @@ export default function GigWorkTracker() {
         m._id === milestoneId ? { ...m, status: newStatus } : m,
       );
       const total = milestones.length;
-      const completed = milestones.filter((m) => m.status === "completed").length;
+      const completed = milestones.filter(
+        (m) => m.status === "completed",
+      ).length;
       return {
         ...prev,
         milestones,
         completionPercentage: total ? Math.round((completed / total) * 100) : 0,
       };
     });
+  };
+
+  const getClientRevieweeId = () => {
+    if (!gig?.client) return "";
+    return (
+      gig.client.user?._id || gig.client.user || gig.client._id || gig.client
+    );
+  };
+
+  const getClientRevieweeName = () => {
+    if (!gig?.client) return "Project Client";
+    if (gig.client.companyName) return gig.client.companyName;
+    if (gig.client.contactPerson?.name) return gig.client.contactPerson.name;
+    return "Project Client";
   };
 
   if (loading) {
@@ -312,8 +350,12 @@ export default function GigWorkTracker() {
 
           <div className="mt-6">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="font-medium text-slate-700">Overall completion</span>
-              <span className="font-bold text-blue-700">{gig.completionPercentage}%</span>
+              <span className="font-medium text-slate-700">
+                Overall completion
+              </span>
+              <span className="font-bold text-blue-700">
+                {gig.completionPercentage}%
+              </span>
             </div>
             <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
               <div
@@ -327,69 +369,93 @@ export default function GigWorkTracker() {
         {/* Editable milestone list */}
         <SectionCard title="Milestones">
           {gig.milestones?.length ? (
-            <ul className="relative border-l-2 border-blue-200 ml-1.5">
-              {gig.milestones.map((m, i) => {
+            <ul className="relative border-l border-blue-200 ml-2 space-y-6">
+              {gig.milestones.map((m) => {
                 const style = statusStyles[m.status] || statusStyles.pending;
+                const badge = getDeadlineBadge(m.dueDate, m.status);
                 return (
-                  <li
-                    key={m._id}
-                    className={`relative pl-6 ${i !== gig.milestones.length - 1 ? "pb-8" : ""}`}
-                  >
+                  <li key={m._id} className="relative pl-6">
                     <span
-                      className={`absolute -left-1.75 top-1 w-3 h-3 rounded-full ring-4 ring-white ${style.dot}`}
+                      className={`absolute left-[6.5px] top-1.5 w-3 h-3 rounded-full ring-4 ring-white ${style.dot}`}
                     />
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-slate-900">{m.title}</h3>
+                        <h3 className="font-semibold text-slate-900">
+                          {m.title}
+                        </h3>
                         <span
                           className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${style.label}`}
                         >
                           {m.status.replace("_", " ")}
                         </span>
-                        {(() => {
-                          const badge = getDeadlineBadge(m.dueDate, m.status);
-                          return badge ? (
-                            <span
-                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.className}`}
-                            >
-                              {badge.text}
-                            </span>
-                          ) : null;
-                        })()}
+                        {badge && (
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.className}`}
+                          >
+                            {badge.text}
+                          </span>
+                        )}
                       </div>
                       <MilestoneStatusControl
                         gigId={gig._id}
                         milestone={m}
                         onUpdated={handleMilestoneUpdate}
+                        hasReviewed={hasReviewed}
                       />
                     </div>
                     {m.description && (
-                      <p className="text-sm text-slate-600 mt-1">{m.description}</p>
+                      <p className="text-sm text-slate-600 mt-1">
+                        {m.description}
+                      </p>
                     )}
                     <p className="text-xs text-slate-400 mt-1">
-                      ${m.amount}
+                      ₹{m.amount}
                       {m.dueDate &&
-                        ` · due ${new Date(m.dueDate).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}`}
+                        ` · due ${new Date(m.dueDate).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}`}
                     </p>
                   </li>
                 );
               })}
             </ul>
           ) : (
-            <p className="text-sm text-slate-400">No milestones defined for this gig yet.</p>
+            <p className="text-sm text-slate-400">
+              No milestones defined for this gig yet.
+            </p>
           )}
         </SectionCard>
 
         {/* Progress log — freelancer can post updates + attach files */}
         <div className="mt-6">
           <SectionCard title="Progress Updates">
-            <ProgressLogComposer gigId={gig._id} onPosted={handleLogPosted} />
+            <ProgressLogComposer
+              gigId={gig._id}
+              onPosted={handleLogPosted}
+              hasReviewed={hasReviewed}
+            />
             <ProgressLogFeed logs={logs} />
           </SectionCard>
+
+          {/* Module 8 — Smart Reputation & Review System (Freelancer Reviewing Client) */}
+          {gig.status === "completed" && gig.client && (
+            <div className="mt-6">
+              <SectionCard title="Rate the Client">
+                <SubmitReviewForm
+                  projectId={gig._id}
+                  revieweeId={getClientRevieweeId()}
+                  revieweeName={getClientRevieweeName()}
+                  hasReviewed={hasReviewed}
+                  onReviewSubmitted={() => setHasReviewed(true)}
+                />
+              </SectionCard>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

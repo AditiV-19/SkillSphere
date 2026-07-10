@@ -146,3 +146,15 @@ export const addProgressLog = (gigId, payload) => {
 export const getProgressLogs = (gigId) => {
   return API.get(`/client/gig/${gigId}/logs`);
 }
+
+// Reviews
+export const submitReview = (reviewData) => {
+  return API.post("/reviews", reviewData);
+}
+export const getUserReviews = (userId) => {
+  return API.get(`/reviews/user/${userId}`);
+}
+
+export const getGigReviewStatus = (gigId) => {
+  return API.get(`/reviews/review/${gigId}`);
+}

@@ -102,13 +102,6 @@ const gigSchema = new Schema(
       },
     },
 
-    // Attachments for documents (Wire up with Cloudinary in Week 4) [cite: 49, 169]
-    attachments: [
-      {
-        type: String,
-      },
-    ],
-
     // Keeps references pointing to User to easily track IDs from auth tokens
     invitedFreelancers: [
       {
@@ -141,12 +134,6 @@ const gigSchema = new Schema(
         name: { type: String, required: true },
       },
     ],
-    progressPercentage: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100,
-    },
     
     progressLogs: [
   {
