@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { getProfile, updateProfile } from "../../services/api.js";
+import {
+  getProfile,
+  getReviewAnalytics,
+  updateProfile,
+} from "../../services/api.js";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import ProfileHeader from "../../components/profile/ProfileHeader";
@@ -23,7 +27,9 @@ import {
   Sparkles,
   BarChart3,
   Star,
+  ChartLine,
 } from "lucide-react";
+import ReviewAnalytics from "../../components/ReviewAnalytics";
 
 export default function ClientProfile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -31,6 +37,8 @@ export default function ClientProfile() {
   const [profile, setProfile] = useState(null);
 
   const [loading, setLoading] = useState(true);
+
+  const [analytics, setAnalytics] = useState(null);
 
   const handleSubmit = async (formData) => {
     try {
@@ -54,6 +62,14 @@ export default function ClientProfile() {
       const response = await getProfile("client");
 
       setProfile(response.data);
+
+      const userId = response.data.user?._id;
+
+      if (userId) {
+        const analyticsResponse = await getReviewAnalytics(userId);
+
+        setAnalytics(analyticsResponse.data.analytics);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -70,8 +86,12 @@ export default function ClientProfile() {
   const socials = profile.socials || {};
   const hiringPreferences = profile.hiringPreferences || {};
   const stats = profile.stats || {};
-
-  const locationLine = [location.address, location.city, location.state, location.country]
+  const locationLine = [
+    location.address,
+    location.city,
+    location.state,
+    location.country,
+  ]
     .filter(Boolean)
     .join(", ");
 
@@ -84,6 +104,7 @@ export default function ClientProfile() {
           profile={profile}
           isShow={true}
         />
+
         {/* content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* left column */}
@@ -117,7 +138,9 @@ export default function ClientProfile() {
                 <div>
                   <p className="text-slate-400">Company size</p>
                   <p className="font-medium text-slate-900">
-                    {profile.companySize ? `${profile.companySize} employees` : "—"}
+                    {profile.companySize
+                      ? `${profile.companySize} employees`
+                      : "—"}
                   </p>
                 </div>
                 <div>
@@ -166,17 +189,6 @@ export default function ClientProfile() {
                 <p className="text-sm text-slate-400">
                   No contact person added yet.
                 </p>
-              )}
-            </SectionCard>
-
-            <SectionCard icon={MapPin} title="Location">
-              {locationLine ? (
-                <p className="flex items-center gap-2 text-sm text-slate-600">
-                  <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                  {locationLine}
-                </p>
-              ) : (
-                <p className="text-sm text-slate-400">No location added yet.</p>
               )}
             </SectionCard>
           </div>
@@ -292,7 +304,7 @@ export default function ClientProfile() {
               </div>
             </SectionCard>
 
-            <SectionCard icon={BarChart3} title="Stats">
+            {/* <SectionCard icon={BarChart3} title="Stats">
               <div className="grid grid-cols-2 gap-y-4 gap-x-4 text-sm">
                 <div>
                   <p className="text-slate-400">Gigs posted</p>
@@ -340,9 +352,21 @@ export default function ClientProfile() {
                   ({profile.totalReviews ?? 0} reviews)
                 </span>
               </div>
+            </SectionCard> */}
+
+            <SectionCard icon={MapPin} title="Location">
+              {locationLine ? (
+                <p className="flex items-center gap-2 text-sm text-slate-600">
+                  <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+                  {locationLine}
+                </p>
+              ) : (
+                <p className="text-sm text-slate-400">No location added yet.</p>
+              )}
             </SectionCard>
           </div>
         </div>
+        <ReviewAnalytics analytics={analytics} />
       </div>
 
       {isEditing && (

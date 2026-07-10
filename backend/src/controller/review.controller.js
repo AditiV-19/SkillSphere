@@ -2,6 +2,7 @@ import { Review } from "../models/review.model.js";
 import { Gig } from "../models/gig.model.js";
 import { User } from "../models/user.model.js";
 import { ClientProfile, FreelancerProfile } from "../models/profile.model.js";
+import { generateReviewAnalytics } from "../utils/reviewAnalytics.js";
 
 export const createReview = async (req, res) => {
   try {
@@ -84,23 +85,7 @@ export const createReview = async (req, res) => {
 
     // 5. Recalculate weighted reputation
     const allReviewsForUser = await Review.find({ reviewee: revieweeId });
-    const totalRatingSum = allReviewsForUser.reduce(
-      (sum, rev) => sum + rev.rating,
-      0,
-    );
-    const averageRating = (totalRatingSum / allReviewsForUser.length).toFixed(
-      2,
-    );
-
-    let weightedSum = 0;
-    let totalWeight = 0;
-
-    allReviewsForUser.forEach((review) => {
-      weightedSum += review.rating * review.weight;
-      totalWeight += review.weight;
-    });
-
-    const weightedRating = totalWeight === 0 ? 0 : weightedSum / totalWeight;
+    const analytics = generateReviewAnalytics(allReviewsForUser);
 
     if (isClient) {
       // The client left this review -> The reviewee is the Freelancer.
@@ -108,10 +93,10 @@ export const createReview = async (req, res) => {
       await FreelancerProfile.findOneAndUpdate(
         { user: revieweeId },
         {
-          averageRating: Number(averageRating),
-          weightedRating: Number(weightedRating),
-          totalReviews: allReviewsForUser.length,
-          totalRatings: allReviewsForUser.length
+          averageRating: Number(analytics.averageRating),
+          weightedRating: Number(analytics.weightedRating),
+          totalReviews: analytics.totalReviews, 
+          totalRatings: analytics.totalReviews,
         },
         { returnDocument: "after" },
       );
@@ -121,10 +106,10 @@ export const createReview = async (req, res) => {
       await ClientProfile.findOneAndUpdate(
         { user: revieweeId },
         {
-          averageRating: Number(averageRating),
-          weightedRating: Number(weightedRating),
-          totalReviews: allReviewsForUser.length,
-          totalRatings: allReviewsForUser.length
+          averageRating: Number(analytics.averageRating),
+          weightedRating: Number(analytics.weightedRating),
+          totalReviews: analytics.totalReviews,
+          totalRatings: analytics.totalReviews,
         },
         { returnDocument: "after" },
       );
@@ -205,6 +190,33 @@ export const getGigReviewStatus = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+export const getReviewAnalytics = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const reviews = await Review.find({
+      reviewee: userId,
+    })
+      .populate("reviewer", "name profilePicture")
+      .sort({ createdAt: -1 });
+
+    const analytics = generateReviewAnalytics(reviews);
+
+    return res.status(200).json({
+      success: true,
+      analytics,
+      reviews
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch review analytics.",
     });
   }
 };

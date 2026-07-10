@@ -158,3 +158,6 @@ export const getUserReviews = (userId) => {
 export const getGigReviewStatus = (gigId) => {
   return API.get(`/reviews/review/${gigId}`);
 }
+export const getReviewAnalytics = (userId) => {
+  return API.get(`/reviews/analytics/${userId}`);
+}

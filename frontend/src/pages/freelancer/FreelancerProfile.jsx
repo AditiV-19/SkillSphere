@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getProfile, updateProfile } from "../../services/api.js";
+import { getProfile, getReviewAnalytics, updateProfile } from "../../services/api.js";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import ProfileHeader from "../../components/profile/ProfileHeader";
@@ -24,6 +24,7 @@ import {
   Camera,
   Save,
 } from "lucide-react";
+import ReviewAnalytics from "../../components/ReviewAnalytics.jsx";
 
 const formatDate = (date) => {
   if (!date) return "Present";
@@ -39,6 +40,7 @@ export default function FreelancerProfile() {
 
   const [loading, setLoading] = useState(true);
 
+  const [analytics, setAnalytics] = useState(null);
 
   const handleSubmit = async (formData) => {
     try {
@@ -59,9 +61,17 @@ export default function FreelancerProfile() {
 
   const fetchProfile = async () => {
     try {
-      const response = await getProfile('freelancer');
+      const response = await getProfile("freelancer");
 
       setProfile(response.data);
+
+      const userId = response.data.user?._id;
+
+      if (userId) {
+        const analyticsResponse = await getReviewAnalytics(userId);
+
+        setAnalytics(analyticsResponse.data.analytics);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -318,25 +328,25 @@ export default function FreelancerProfile() {
                       >
                         {/* Time Display */}
 
-                       <div className="font-semibold text-slate-700 leading-normal">
+                        <div className="font-semibold text-slate-700 leading-normal">
                           <p>
                             {startDate.toLocaleDateString("en-IN", {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
                             })}{" "}
-                          -{" "}
-                          {endDate.toLocaleDateString("en-IN", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}{" "}
+                            -{" "}
+                            {endDate.toLocaleDateString("en-IN", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}{" "}
                           </p>
                           <p className="text-[10px] text-slate-400 font-normal mt-0.5">
                             {start} - {end}
                           </p>
                         </div>
-                         {slot.isBooked ? (
+                        {slot.isBooked ? (
                           <span className="bg-green-100 text-green-500 text-s font-bold px-3 py-1 rounded-full border-green-300 border-2">
                             Booked
                           </span>
@@ -355,6 +365,9 @@ export default function FreelancerProfile() {
             </SectionCard>
           </div>
         </div>
+        <ReviewAnalytics 
+          analytics={analytics}
+          />
       </div>
 
       {isEditing && (
