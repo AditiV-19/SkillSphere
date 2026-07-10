@@ -75,9 +75,13 @@ export default function PostProject() {
   const addMilestone = () => {
     if (!milestoneTitle || !milestoneAmount) return;
     setMilestones([
-      ...milestones,
-      { name: milestoneTitle, amount: parseFloat(milestoneAmount) },
-    ]);
+  ...milestones,
+  {
+    title: milestoneTitle,
+    amount: parseFloat(milestoneAmount),
+    status: "pending",
+  },
+]);
     setMilestoneTitle("");
     setMilestoneAmount("");
   };
