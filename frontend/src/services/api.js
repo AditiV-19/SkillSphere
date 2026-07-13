@@ -182,3 +182,6 @@ export const getConversations = () => {
 export const getMessages = (conversationId) => {
   return API.get(`/chat/messages/${conversationId}`);
 }
+export const markMessagesAsRead=(conversationId)=>{
+  return API.put(`/chat/read/${conversationId}`);
+}

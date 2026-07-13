@@ -1,5 +1,5 @@
-import {Conversation} from "../models/chat.model.js"
-import {Message} from "../models/chat.model.js";
+import { Conversation } from "../models/chat.model.js";
+import { Message } from "../models/chat.model.js";
 
 export const startConversation = async (req, res) => {
   try {
@@ -25,14 +25,15 @@ export const startConversation = async (req, res) => {
       });
     }
 
-    conversation = await Conversation.findById(conversation._id)
-      .populate("participants", "firstname profilePicture role");
+    conversation = await Conversation.findById(conversation._id).populate(
+      "participants",
+      "firstName profilePicture role",
+    );
 
     res.status(200).json({
       success: true,
       conversation,
     });
-
   } catch (error) {
     console.error(error);
 
@@ -50,12 +51,27 @@ export const getConversations = async (req, res) => {
     const conversations = await Conversation.find({
       participants: userId,
     })
-      .populate("participants", "firstname email profilePicture")
+      .populate("participants", "firstName email profilePicture")
       .sort({ updatedAt: -1 });
 
-    res.json({
+    const conversationsWithUnread = await Promise.all(
+      conversations.map(async (conversation) => {
+        const unreadCount = await Message.countDocuments({
+          conversation: conversation._id,
+          receiver: userId,
+          isRead: false,
+        });
+
+        return {
+          ...conversation.toObject(),
+          unreadCount,
+        };
+      }),
+    );
+
+    res.status(200).json({
       success: true,
-      conversations,
+      conversations: conversationsWithUnread,
     });
   } catch (error) {
     res.status(500).json({
@@ -72,7 +88,7 @@ export const getMessages = async (req, res) => {
     const messages = await Message.find({
       conversation: conversationId,
     })
-      .populate("sender", "firstname profilePicture")
+      .populate("sender", "firstName profilePicture")
       .sort({ createdAt: 1 });
 
     res.json({
@@ -83,6 +99,34 @@ export const getMessages = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+export const markMessagesAsRead = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    await Message.updateMany(
+      {
+        conversation: conversationId,
+        receiver: req.user.id,
+        isRead: false,
+      },
+
+      {
+        isRead: true,
+      },
+    );
+
+    res.status(200).json({
+      success: true,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
     });
   }
 };

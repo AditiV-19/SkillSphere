@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { getConversations, getMessages } from "../services/api";
+import {
+  getConversations,
+  getMessages,
+  markMessagesAsRead,
+} from "../services/api";
 import { useLocation } from "react-router-dom";
 import socket from "../services/socket";
 import Sidebar from "../components/Sidebar";
@@ -49,10 +53,16 @@ export default function Chat() {
   };
 
   // Helper to update the sidebar preview instantly
-  const updateSidebarLastMessage = (convId, msgText) => {
+const updateSidebarLastMessage = (convId, msgText, isActive) => {
     setConversations((prev) =>
-      prev.map((conv) =>
-        conv._id === convId ? { ...conv, lastMessage: msgText } : conv,
+      prev.map((conversation) =>
+        conversation._id === convId
+          ? {
+              ...conversation,
+              lastMessage: msgText,
+              unreadCount: isActive? 0 : (conversation.unreadCount || 0) + 1,
+            }
+          : conversation,
       ),
     );
   };
@@ -88,6 +98,16 @@ export default function Chat() {
       try {
         const res = await getMessages(selectedConversation._id);
         setMessages(res.data.messages);
+
+        await markMessagesAsRead(selectedConversation._id);
+        
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv._id === selectedConversation._id
+              ? { ...conv, unreadCount: 0 }
+              : conv
+          )
+        );
       } catch (err) {
         console.error(err);
       }
@@ -112,23 +132,30 @@ export default function Chat() {
   // -------------------------------
   // Listen for new messages
   // -------------------------------
-  useEffect(() => {
-    const handleReceiveMessage = (message) => {
-      const conversationId = message.conversation?._id || message.conversation;
+useEffect(() => {
+  const handleReceiveMessage = async (message) => {
+    const conversationId = message.conversation?._id || message.conversation;
+    const isActiveConversation = conversationId === activeConversationIdRef.current;
 
-      if (conversationId === activeConversationIdRef.current) {
-        setMessages((prev) => [...prev, message]);
+    if (isActiveConversation) {
+      setMessages((prev) => [...prev, message]);
+
+      try {
+        await markMessagesAsRead(conversationId);
+      } catch (err) {
+        console.error("Failed to mark message as read:", err);
       }
+    }
 
-      updateSidebarLastMessage(conversationId, message.text);
-    };
+    updateSidebarLastMessage(conversationId, message.text, isActiveConversation);
+  };
 
-    socket.on("receiveMessage", handleReceiveMessage);
+  socket.on("receiveMessage", handleReceiveMessage);
 
-    return () => {
-      socket.off("receiveMessage", handleReceiveMessage);
-    };
-  }, []);
+  return () => {
+    socket.off("receiveMessage", handleReceiveMessage);
+  };
+}, []);
 
   // -------------------------------
   // Scroll down chat comes
@@ -183,6 +210,11 @@ export default function Chat() {
                   <p className="text-sm text-slate-500 truncate mt-0.5">
                     {conversation.lastMessage || "No messages yet"}
                   </p>
+                  {conversation.unreadCount > 0 && (
+                    <div className="bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                      {conversation.unreadCount}
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -240,11 +272,22 @@ export default function Chat() {
                       <div
                         className={`px-4 py-2.5 rounded-2xl max-w-md wrap-break-word text-sm shadow-sm ${
                           ownMessage
-                            ? "bg-blue-600 text-white rounded-br-sm"
-                            : "bg-white border border-slate-200 text-slate-800 rounded-bl-sm"
+                            ? "bg-blue-600 text-white rounded"
+                            : "bg-white border border-slate-200 text-slate-800 rounded"
                         }`}
                       >
-                        {message.text}
+                        <p>{message.text}</p>
+
+                        <p
+                          className={`text-[10px] mt-1 text-right ${
+                            ownMessage ? "text-blue-100" : "text-slate-400"
+                          }`}
+                        >
+                          {new Date(message.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
                       </div>
                     </div>
                   );
