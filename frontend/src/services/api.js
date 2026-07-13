@@ -170,3 +170,15 @@ export const searchFreelancers = (params) => {
 export const searchGigs = (params) => {
   return API.get("/client/gig/search", { params });
 };
+
+
+// Chat
+export const startConversation = (receiverId) => {
+  return API.post("/chat/start", { receiverId });
+}
+export const getConversations = () => {
+  return API.get("/chat/conversations");
+}
+export const getMessages = (conversationId) => {
+  return API.get(`/chat/messages/${conversationId}`);
+}

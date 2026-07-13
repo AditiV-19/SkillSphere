@@ -23,6 +23,7 @@ import AssignedGigs from "./pages/freelancer/AssignedGigs";
 import GigProgress from "./pages/client/GigProgress";
 import GigWorkTracker from "./pages/freelancer/GigWorkTracker";
 import ActiveContracts from "./pages/client/ActiveContracts";
+import Chat from "./pages/Chat";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -205,6 +206,11 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/chats" element={<Chat />} />
+
+      <Route path="/chats/:conversationId" element={<Chat />} />
+
     </Routes>
   );
 }

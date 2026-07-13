@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { searchFreelancers } from "../../services/api";
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
+import { startConversation } from "../../services/api";
 
 export default function BrowseFreelancers() {
   const navigate = useNavigate();
@@ -65,6 +66,24 @@ export default function BrowseFreelancers() {
   useEffect(() => {
     fetchFreelancerProfiles();
   }, [debouncedSearch, location, availability, minRating, sort, page]);
+
+
+  const handleMessage = async (receiverId) => {
+    try {
+
+        const res = await startConversation(receiverId);
+
+        navigate("/chats", {
+            state: {
+                conversation: res.data.conversation,
+            },
+        });
+
+    } catch (err) {
+        console.log(err);
+    }
+};
+
 
   const fetchFreelancerProfiles = async () => {
     try {
@@ -318,6 +337,13 @@ export default function BrowseFreelancers() {
                   >
                     <span>View Profile</span>
                     <ArrowRight size={15} />
+                  </button>
+
+                  <button
+                    onClick={() => handleMessage(fl.user._id)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    Message
                   </button>
                 </div>
               </div>

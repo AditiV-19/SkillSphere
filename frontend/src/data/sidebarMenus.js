@@ -56,7 +56,7 @@ export const sidebarMenus = {
     {
       label: "Messages",
       icon: FaComments,
-      route: "/messages",
+      route: "/chats",
     },
 
     {
@@ -113,7 +113,7 @@ export const sidebarMenus = {
     {
       label: "Messages",
       icon: FaComments,
-      route: "/messages",
+      route: "/chats",
     },
 
     {
