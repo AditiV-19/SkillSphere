@@ -3,10 +3,12 @@ import {
   getConversations,
   getMessages,
   markMessagesAsRead,
+  uploadChatFile,
 } from "../services/api";
 import { useLocation } from "react-router-dom";
 import socket from "../services/socket";
 import Sidebar from "../components/Sidebar";
+import { FaPaperclip } from "react-icons/fa";
 
 export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -14,7 +16,9 @@ export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
-
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isTyping, setIsTyping] = useState(null);
+  const typingTimeout = useRef(null);
   const bottomRef = useRef(null);
   const activeConversationIdRef = useRef(null);
 
@@ -25,9 +29,14 @@ export default function Chat() {
     activeConversationIdRef.current = selectedConversation?._id;
   }, [selectedConversation]);
 
-  const sendMessage = () => {
-    if (!text.trim()) {
-      console.log("Message is empty");
+  const sendMessage = async () => {
+    socket.emit("stopTyping", {
+      conversationId: selectedConversation._id,
+      userId: currentUser.id,
+    });
+
+    if (!text.trim() && !selectedFile) {
+      console.log("Message and file are empty");
       return;
     }
 
@@ -40,27 +49,52 @@ export default function Chat() {
       (user) => user._id !== currentUser.id,
     );
 
+    let fileUrl = "";
+    let fileName = "";
+    let fileType = "";
+
+    if (selectedFile) {
+      try {
+        const res = await uploadChatFile(selectedFile);
+        fileUrl = res.data.fileUrl;
+        fileName = res.data.fileName;
+        fileType = res.data.fileType;
+      } catch (error) {
+        console.error("File upload failed:", error);
+        return;
+      }
+    }
+
     socket.emit("sendMessage", {
       conversationId: selectedConversation._id,
       sender: currentUser.id,
       receiver: receiver._id,
       text: text.trim(),
+      fileUrl,
+      fileName,
+      fileType,
     });
 
     console.log("Message emitted");
 
     setText("");
+    setSelectedFile(null);
+  };
+
+  //FILE
+  const handleFile = (e) => {
+    setSelectedFile(e.target.files[0]);
   };
 
   // Helper to update the sidebar preview instantly
-const updateSidebarLastMessage = (convId, msgText, isActive) => {
+  const updateSidebarLastMessage = (convId, msgText, isActive) => {
     setConversations((prev) =>
       prev.map((conversation) =>
         conversation._id === convId
           ? {
               ...conversation,
               lastMessage: msgText,
-              unreadCount: isActive? 0 : (conversation.unreadCount || 0) + 1,
+              unreadCount: isActive ? 0 : (conversation.unreadCount || 0) + 1,
             }
           : conversation,
       ),
@@ -100,13 +134,13 @@ const updateSidebarLastMessage = (convId, msgText, isActive) => {
         setMessages(res.data.messages);
 
         await markMessagesAsRead(selectedConversation._id);
-        
+
         setConversations((prev) =>
           prev.map((conv) =>
             conv._id === selectedConversation._id
               ? { ...conv, unreadCount: 0 }
-              : conv
-          )
+              : conv,
+          ),
         );
       } catch (err) {
         console.error(err);
@@ -132,30 +166,35 @@ const updateSidebarLastMessage = (convId, msgText, isActive) => {
   // -------------------------------
   // Listen for new messages
   // -------------------------------
-useEffect(() => {
-  const handleReceiveMessage = async (message) => {
-    const conversationId = message.conversation?._id || message.conversation;
-    const isActiveConversation = conversationId === activeConversationIdRef.current;
+  useEffect(() => {
+    const handleReceiveMessage = async (message) => {
+      const conversationId = message.conversation?._id || message.conversation;
+      const isActiveConversation =
+        conversationId === activeConversationIdRef.current;
 
-    if (isActiveConversation) {
-      setMessages((prev) => [...prev, message]);
+      if (isActiveConversation) {
+        setMessages((prev) => [...prev, message]);
 
-      try {
-        await markMessagesAsRead(conversationId);
-      } catch (err) {
-        console.error("Failed to mark message as read:", err);
+        try {
+          await markMessagesAsRead(conversationId);
+        } catch (err) {
+          console.error("Failed to mark message as read:", err);
+        }
       }
-    }
 
-    updateSidebarLastMessage(conversationId, message.text, isActiveConversation);
-  };
+      updateSidebarLastMessage(
+        conversationId,
+        message.text,
+        isActiveConversation,
+      );
+    };
 
-  socket.on("receiveMessage", handleReceiveMessage);
+    socket.on("receiveMessage", handleReceiveMessage);
 
-  return () => {
-    socket.off("receiveMessage", handleReceiveMessage);
-  };
-}, []);
+    return () => {
+      socket.off("receiveMessage", handleReceiveMessage);
+    };
+  }, []);
 
   // -------------------------------
   // Scroll down chat comes
@@ -164,6 +203,34 @@ useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+
+  // -------------------------------
+  // Typing indicator detector
+  // -------------------------------
+  useEffect(() => {
+    const handleTyping = ({ conversationId }) => {
+      if (conversationId === activeConversationIdRef.current) {
+        setIsTyping(true);
+      }
+    };
+
+    const handleStopTyping = ({ conversationId }) => {
+      if (conversationId === activeConversationIdRef.current) {
+        setIsTyping(false);
+      }
+    };
+
+    socket.on("userTyping", handleTyping);
+    socket.on("userStoppedTyping", handleStopTyping);
+
+    return () => {
+      socket.off("userTyping", handleTyping);
+      socket.off("userStoppedTyping", handleStopTyping);
+    };
+  }, []);
+
+
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center text-slate-500 font-medium">
@@ -171,7 +238,6 @@ useEffect(() => {
       </div>
     );
   }
-
   return (
     <div className="h-screen flex bg-gray-100">
       <Sidebar />
@@ -276,7 +342,17 @@ useEffect(() => {
                             : "bg-white border border-slate-200 text-slate-800 rounded"
                         }`}
                       >
-                        <p>{message.text}</p>
+                        {message.text && <p>{message.text}</p>}
+                        {message.fileUrl && (
+                          <a
+                            href={message.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                          >
+                            <FaPaperclip /> {message.fileName}{" "}
+                          </a>
+                        )}
 
                         <p
                           className={`text-[10px] mt-1 text-right ${
@@ -296,27 +372,78 @@ useEffect(() => {
               <div ref={bottomRef} className="h-1" />
             </div>
 
+            {isTyping && (
+  <div className="px-5 py-2 text-sm text-gray-500 italic">
+    Typing...
+  </div>
+)}
+
             {/* Message Input */}
-            <div className="border-t p-4 bg-white flex gap-3 items-center">
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                placeholder="Type your message..."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
-              />
-              <button
-                disabled={!text.trim()}
-                onClick={sendMessage}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
-              >
-                Send
-              </button>
+            <div className="border-t p-4 bg-white flex flex-col gap-2">
+              {/* Visual Indicator if a file is attached */}
+              {selectedFile && (
+                <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg self-start">
+                  <FaPaperclip />
+                  <span className="truncate max-w-50">
+                    {selectedFile.name}
+                  </span>
+                  <button
+                    onClick={() => setSelectedFile(null)}
+                    className="text-slate-400 hover:text-red-500 ml-2 font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              
+
+              <div className="flex gap-3 items-center w-full">
+                <input type="file" hidden id="chatFile" onChange={handleFile} />
+
+                <label
+                  htmlFor="chatFile"
+                  className="cursor-pointer text-slate-400 hover:text-blue-500 transition-colors p-2"
+                >
+                  <FaPaperclip size={20} />
+                </label>
+
+                <input
+                  value={text}
+                  onChange={(e) => {
+                    setText(e.target.value);
+
+                    socket.emit("typing", {
+                      conversationId: selectedConversation._id,
+                      userId: currentUser.id,
+                    });
+
+                    clearTimeout(typingTimeout.current);
+
+                    typingTimeout.current = setTimeout(() => {
+                      socket.emit("stopTyping", {
+                        conversationId: selectedConversation._id,
+                        userId: currentUser.id,
+                      });
+                    }, 1200);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="Type your message..."
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
+                />
+                <button
+                  // FIXED: Disabled only if BOTH text and file are missing
+                  disabled={!text.trim() && !selectedFile}
+                  onClick={sendMessage}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
+                >
+                  Send
+                </button>
+              </div>
             </div>
           </>
         )}

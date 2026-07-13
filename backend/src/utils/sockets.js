@@ -40,7 +40,7 @@ export const initializeSocket = (server) => {
 
     socket.on("sendMessage", async (data) => {
       try {
-        const { conversationId, sender, receiver, text } = data;
+        const { conversationId, sender, receiver, text, fileUrl, fileName, fileType } = data;
 
         // Save message
         const message = await Message.create({
@@ -48,6 +48,9 @@ export const initializeSocket = (server) => {
           sender,
           receiver,
           text,
+          fileUrl,
+          fileType,
+          fileName,
         });
 
         // Update conversation preview
@@ -90,6 +93,15 @@ export const initializeSocket = (server) => {
       socket.leave(conversationId);
       console.log(`${socket.id} left ${conversationId}`);
     });
+
+    socket.on("typing", ({ conversationId, userId }) => {
+    socket.to(conversationId).emit("userTyping", { conversationId, userId });
+});
+
+socket.on("stopTyping", ({ conversationId, userId }) => {
+  socket.to(conversationId).emit("userStoppedTyping", { conversationId, userId });
+});
+
   });
 
   return io;

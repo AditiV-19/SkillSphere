@@ -40,7 +40,7 @@ export const uploadProfileImage = (imageFile) => {
   const formData = new FormData();
 
   formData.append("image", imageFile);
-  
+
   return API.post("/users/upload", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
@@ -55,7 +55,6 @@ export const uploadResumeToServer = (file) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
-
 
 //Gigs
 export const createGig = (gigData) => {
@@ -74,7 +73,6 @@ export const deleteGig = (id) => {
   return API.delete(`/client/gig/${id}`);
 };
 
-
 //Browse Freelancer
 
 export const getAllFreelancers = () => {
@@ -85,15 +83,14 @@ export const getFreelancerById = (id) => {
 };
 
 // invite freelancer
-export const inviteFreelancerToGig = (gigId, freelancerUserId) =>{
+export const inviteFreelancerToGig = (gigId, freelancerUserId) => {
   return API.patch(`/client/gig/${gigId}/invite`, { freelancerUserId });
-}
+};
 
 // invitations on freelancer side
 export const getFreelancerInvitations = () => {
   return API.get("/client/gig/freelancer/invitations");
 };
-
 
 // Apply to gig/ Gig Proposals
 export const submitGigProposal = (gigId, proposalData) => {
@@ -103,13 +100,13 @@ export const updateFreelancerProposal = (proposalId, updatedData) => {
   return API.put(`/client/gig/proposals/${proposalId}`, updatedData);
 };
 export const getFreelancerApplications = () => {
-  return API.get("/client/gig/freelancer/applications/all"); 
+  return API.get("/client/gig/freelancer/applications/all");
 };
 export const updateProposalStatus = (proposalId, status) => {
   return API.patch(`/client/gig/proposals/${proposalId}/status`, { status });
 };
 export const getCompanyApplicationsDeck = () => {
-  return API.get("/client/gig/applications/all"); 
+  return API.get("/client/gig/applications/all");
 };
 
 // Assigned Gigs for freelancer and Active gigs for client
@@ -118,16 +115,17 @@ export const getAssignedGigs = () => {
 };
 export const getActiveGigs = () => {
   return API.get("/client/gig/client/active-gigs");
-}
-
+};
 
 // Track progress
 export const getGigProgress = (gigId) => {
   return API.get(`/client/gig/${gigId}/progress`);
-}
-export const updateMilestoneStatus = (gigId, milestoneId, status) =>{
-    return API.patch(`/client/gig/${gigId}/milestones/${milestoneId}`, { status });
-  }
+};
+export const updateMilestoneStatus = (gigId, milestoneId, status) => {
+  return API.patch(`/client/gig/${gigId}/milestones/${milestoneId}`, {
+    status,
+  });
+};
 
 export const uploadProjectFile = (file) => {
   const formData = new FormData();
@@ -138,30 +136,31 @@ export const uploadProjectFile = (file) => {
 };
 
 export const updateMilestoneDeadline = (gigId, milestoneId, dueDate) => {
-  return API.patch(`/client/gig/${gigId}/milestones/${milestoneId}/deadline`, { dueDate });
-}
+  return API.patch(`/client/gig/${gigId}/milestones/${milestoneId}/deadline`, {
+    dueDate,
+  });
+};
 export const addProgressLog = (gigId, payload) => {
   return API.post(`/client/gig/${gigId}/logs`, payload);
-}
+};
 export const getProgressLogs = (gigId) => {
   return API.get(`/client/gig/${gigId}/logs`);
-}
+};
 
 // Reviews
 export const submitReview = (reviewData) => {
   return API.post("/reviews", reviewData);
-}
+};
 export const getUserReviews = (userId) => {
   return API.get(`/reviews/user/${userId}`);
-}
+};
 
 export const getGigReviewStatus = (gigId) => {
   return API.get(`/reviews/review/${gigId}`);
-}
+};
 export const getReviewAnalytics = (userId) => {
   return API.get(`/reviews/analytics/${userId}`);
-}
-
+};
 
 //Search
 export const searchFreelancers = (params) => {
@@ -171,17 +170,24 @@ export const searchGigs = (params) => {
   return API.get("/client/gig/search", { params });
 };
 
-
 // Chat
 export const startConversation = (receiverId) => {
   return API.post("/chat/start", { receiverId });
-}
+};
 export const getConversations = () => {
   return API.get("/chat/conversations");
-}
+};
 export const getMessages = (conversationId) => {
   return API.get(`/chat/messages/${conversationId}`);
-}
-export const markMessagesAsRead=(conversationId)=>{
+};
+export const markMessagesAsRead = (conversationId) => {
   return API.put(`/chat/read/${conversationId}`);
-}
+};
+export const uploadChatFile = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return API.post("/users/upload/chatFile", formData, { 
+    headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
+};
