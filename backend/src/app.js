@@ -7,8 +7,9 @@ import clientRouter from './routes/client.route.js'
 import uploadRouter from './routes/uploadImage.route.js'
 import gigRouter from './routes/gig.route.js'
 import reviewRouter from './routes/review.route.js'
+import chatRouter from './routes/chat.route.js'
 
-const app = express()   //create an express app
+const app = express() 
 
 app.use(cors({
     origin: "http://localhost:5173",
@@ -16,13 +17,13 @@ app.use(cors({
 }))
 app.use(express.json())
 
-// routes declaration
 app.use("/api/v1", userRouter)
 app.use("/api/v1/profile/freelancer", freelancerRouter)
 app.use("/api/v1/profile/client", clientRouter)
-// app.use("/api/v1/users/profile", freelancerRouter)
 app.use("/api/v1/users/upload", uploadRouter)
 
 app.use("/api/v1/client/gig", gigRouter)
 app.use("/api/v1/reviews", reviewRouter)
+
+app.use("/api/v1/chat", chatRouter)
 export default app
