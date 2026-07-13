@@ -26,6 +26,11 @@ export default function BrowseFreelancers() {
   const [location, setLocation] = useState("");
   const [availability, setAvailability] = useState("");
   const [minRating, setMinRating] = useState("");
+  const [minRate, setMinRate] = useState("");
+  const [maxRate, setMaxRate] = useState("");
+  const [debouncedMinRate, setDebouncedMinRate] = useState("");
+  const [debouncedMaxRate, setDebouncedMaxRate] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState("");
   const [sort, setSort] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -45,6 +50,19 @@ export default function BrowseFreelancers() {
   }, [search]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (minRate && maxRate && Number(minRate) > Number(maxRate)) {
+        return;
+      }
+      setPage(1);
+      setDebouncedMinRate(minRate);
+      setDebouncedMaxRate(maxRate);
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [minRate, maxRate]);
+
+  useEffect(() => {
     fetchFreelancerProfiles();
   }, [debouncedSearch, location, availability, minRating, sort, page]);
 
@@ -56,10 +74,14 @@ export default function BrowseFreelancers() {
       const response = await searchFreelancers({
         q: debouncedSearch,
         location,
+        experienceLevel,
+        minRate: debouncedMinRate,
+        maxRate: debouncedMaxRate,
         availability,
         minRating,
         sort,
         page,
+
         limit: 12,
       });
 
@@ -128,7 +150,7 @@ export default function BrowseFreelancers() {
 
         {/* Unified Search & Multi-Parameter Filter Row */}
         <div className="grid grid-cols-12 gap-4 mb-8">
-          <div className="col-span-12 md:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 flex items-center">
+          <div className="col-span-12 lg:col-span-5 xl:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 flex items-center">
             <div className="relative w-full">
               <Search
                 className="absolute left-3 top-2.5 text-blue-500"
@@ -159,7 +181,7 @@ export default function BrowseFreelancers() {
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 flex items-center gap-3">
+          <div className="col-span-12 lg:col-span-7 xl:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 flex-wrap items-center gap-3">
             <SlidersHorizontal size={16} className="text-slate-400 shrink-0" />
             <select
               value={availability}
@@ -167,7 +189,7 @@ export default function BrowseFreelancers() {
                 setPage(1);
                 setAvailability(e.target.value);
               }}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+              className="flex-1 min-w-32.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer transition focus:border-blue-500"
             >
               <option value="">All Availability</option>
               <option value="Available">Available</option>
@@ -181,7 +203,7 @@ export default function BrowseFreelancers() {
                 setPage(1);
                 setMinRating(e.target.value);
               }}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+              className="flex-1 min-w-32.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer transition focus:border-blue-500"
             >
               <option value="">All Ratings</option>
               <option value="5">5★</option>
@@ -195,12 +217,46 @@ export default function BrowseFreelancers() {
                 setPage(1);
                 setSort(e.target.value);
               }}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+              className="flex-1 min-w-32.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer transition focus:border-blue-500"
             >
               <option value="">Newest</option>
               <option value="rating">Highest Rated</option>
               <option value="reviews">Most Reviews</option>
             </select>
+
+            <select
+              value={experienceLevel}
+              onChange={(e) => {
+                setPage(1);
+                setExperienceLevel(e.target.value);
+              }}
+              className="flex-1 min-w-32.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer transition focus:border-blue-500"
+            >
+              <option value="">All Levels</option>
+              <option value="entry">Entry</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="expert">Expert</option>
+            </select>
+
+            <div className="flex items-center gap-1.5 flex-1 min-w-45">
+              <input
+                type="number"
+                min="0"
+                value={minRate}
+                onChange={(e) => setMinRate(e.target.value)}
+                placeholder="Min ₹/hr"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none transition focus:border-blue-500"
+              />
+              <span className="text-slate-400 text-xs">–</span>
+              <input
+                type="number"
+                min="0"
+                value={maxRate}
+                onChange={(e) => setMaxRate(e.target.value)}
+                placeholder="Max ₹/hr"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none transition focus:border-blue-500"
+              />
+            </div>
           </div>
         </div>
         <p className="text-sm text-slate-500 mb-4">

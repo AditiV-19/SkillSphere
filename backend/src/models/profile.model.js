@@ -55,6 +55,12 @@ const freelancerSchema = new Schema(
       type: String,
       default: "",
     },
+    
+    experienceLevel: {
+      type: String,
+      enum: ["entry", "intermediate", "expert"],
+      default: "intermediate",
+    },
 
     hourlyRate: {
       type: Number,

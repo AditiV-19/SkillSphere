@@ -211,13 +211,14 @@ export const searchFreelancers = async (req, res) => {
     const {
       q,
       location,
-      // experienceLevel,
+      experienceLevel,
       minRate,
       maxRate,
       minRating,
       availability,
       sort,
       page = 1,
+      
       limit = 10,
     } = req.query;
 
@@ -276,6 +277,10 @@ export const searchFreelancers = async (req, res) => {
       query.hourlyRate = {};
       if (minRate) query.hourlyRate.$gte = Number(minRate);
       if (maxRate) query.hourlyRate.$lte = Number(maxRate);
+    }
+
+    if (experienceLevel) {
+      query.experienceLevel = experienceLevel;
     }
 
     if (availability) {
