@@ -693,23 +693,33 @@ export const getGigProgress = async (req, res) => {
 
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    const assignedFreelancerId = gig.assignedFreelancer?._id?.toString?.() || gig.assignedFreelancer?.toString();
+    const assignedFreelancerId =
+      gig.assignedFreelancer?._id?.toString?.() ||
+      gig.assignedFreelancer?.toString();
     const isAssignedFreelancer = assignedFreelancerId === req.user.id;
 
     let isOwningClient = false;
     if (req.user.role === "client") {
       const clientProfile = await ClientProfile.findOne({ user: req.user.id });
-      const gigClientProfileId = gig.client?._id?.toString?.() || gig.client?.toString();
-      isOwningClient = clientProfile && gigClientProfileId === clientProfile._id.toString();
+      const gigClientProfileId =
+        gig.client?._id?.toString?.() || gig.client?.toString();
+      isOwningClient =
+        clientProfile && gigClientProfileId === clientProfile._id.toString();
     }
 
     if (!isAssignedFreelancer && !isOwningClient) {
-      return res.status(403).json({ message: "Not authorized to view this gig's progress" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to view this gig's progress" });
     }
 
     const total = gig.milestones.length;
-    const completed = gig.milestones.filter((m) => m.status === "completed").length;
-    const completionPercentage = total ? Math.round((completed / total) * 100) : 0;
+    const completed = gig.milestones.filter(
+      (m) => m.status === "completed",
+    ).length;
+    const completionPercentage = total
+      ? Math.round((completed / total) * 100)
+      : 0;
 
     res.json({
       success: true,
@@ -887,5 +897,115 @@ export const getProgressLogs = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch progress logs" });
+  }
+};
+
+//Search Gigs
+export const searchGigs = async (req, res) => {
+  try {
+    const {
+      q,
+      category,
+      budgetType,
+      minBudget,
+      maxBudget,
+      remote,
+      status,
+      sort,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const query = {};
+    const searchText = q?.trim() || "";
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    if (searchText) {
+      query.$or = [
+        { title: { $regex: searchText, $options: "i" } },
+        { description: { $regex: searchText, $options: "i" } },
+        { skillsRequired: { $regex: searchText, $options: "i" } },
+        { category: { $regex: searchText, $options: "i" } },
+      ];
+    }
+
+    if (category) {
+      query.category = category.toLowerCase();
+    }
+
+    if (budgetType) {
+      query["budget.budgetType"] = budgetType;
+    }
+
+    if (minBudget) {
+      query["budget.max"] = {
+        ...query["budget.max"],
+        $gte: Number(minBudget),
+      };
+    }
+
+    if (maxBudget) {
+      query["budget.min"] = {
+        ...query["budget.min"],
+        $lte: Number(maxBudget),
+      };
+    }
+
+    if (remote === "true" || remote === "false") {
+      query["location.remote"] = remote === "true";
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    const totalResults = await Gig.countDocuments({...query, status: "open"});
+    const totalPages = Math.max(1, Math.ceil(totalResults / limitNumber));
+
+    let sortOption = {};
+    switch (sort) {
+      case "latest":
+        sortOption = { createdAt: -1 };
+        break;
+      case "oldest":
+        sortOption = { createdAt: 1 };
+        break;
+      case "budget-high":
+        sortOption = { "budget.max": -1 };
+        break;
+      case "budget-low":
+        sortOption = { "budget.min": 1 };
+        break;
+      case "proposals":
+        sortOption = { proposalsCount: -1 };
+        break;
+      default:
+        sortOption = { createdAt: -1 };
+    }
+
+    const gigs = await Gig.find({...query, status: "open"})
+      .populate("client", "companyName")
+      .populate("assignedFreelancer", "username")
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limitNumber);
+
+    return res.status(200).json({
+      success: true,
+      page: pageNumber,
+      totalPages,
+      totalResults,
+      count: gigs.length,
+      gigs,
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to search Gigs.",
+    });
   }
 };

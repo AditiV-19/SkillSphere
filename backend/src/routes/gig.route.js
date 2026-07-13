@@ -3,10 +3,14 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/uploadImage.js"
 import { clientOnly, freelancerOnly } from "../middleware/role.middleware.js";
-import { createGig, getGigById, getGigs, updateGig, deleteGig, inviteFreelancer, uninviteFreelancer, getFreelancerInvitations, getGigProgress, updateMilestoneStatus, getFreelancerAssignedGigs, getActiveGigs, addProgressLog, getProgressLogs, updateMilestoneDeadline } from "../controller/gig.controller.js";
+import { createGig, getGigById, getGigs, updateGig, deleteGig, inviteFreelancer, uninviteFreelancer, getFreelancerInvitations, getGigProgress, updateMilestoneStatus, getFreelancerAssignedGigs, getActiveGigs, addProgressLog, getProgressLogs, updateMilestoneDeadline, searchGigs } from "../controller/gig.controller.js";
 import { applyToGig, getCompanyAllApplications, getFreelancerApplications, updateFreelancerProposal, updateProposalStatus } from "../controller/proposal.controller.js";
 
 const router = Router();
+
+
+// Search Gigs
+router.get("/search", authMiddleware, searchGigs);
 
 
 router.get('/', authMiddleware, getGigs);

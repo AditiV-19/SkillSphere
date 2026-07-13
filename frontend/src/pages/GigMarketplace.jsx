@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Filter,
@@ -8,8 +8,9 @@ import {
   Star,
   Briefcase,
   ArrowUpDown,
+  Loader2,
 } from "lucide-react";
-import { getGigs } from "../services/api";
+import { searchGigs } from "../services/api";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import { FaRupeeSign } from "react-icons/fa";
 
@@ -18,80 +19,70 @@ export default function GigMarketplace() {
     ? JSON.parse(localStorage.getItem("user"))
     : null;
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [gigs, setGigs] = useState([]);
 
-  const [experience, setExperience] = useState("All");
-  const [budget, setBudget] = useState("All");
-  const [location, setLocation] = useState("Any");
+  // Filter States
+  const [category, setCategory] = useState("");
+  const [budgetType, setBudgetType] = useState("");
+  const [remote, setRemote] = useState("");
   const [sortBy, setSortBy] = useState("latest");
+  const [page, setPage] = useState(1);
+
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    totalResults: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     fetchGigs();
-  }, []);
+  }, [debouncedSearch, category, budgetType, remote, sortBy, page]);
 
-  const fetchGigs = async () => {
-    try {
-      const res = await getGigs();
-      setGigs(res?.data?.gigs || []);
-    } catch (err) {
-      console.error("Error fetching gigs:", err);
-    }
-  };
+const fetchGigs = async () => {
+  try {
+    setLoading(true);
 
-  const filtered = [...gigs]
-    .filter((gig) => {
-      const searchLower = search.toLowerCase();
+    const params = {
+      q: debouncedSearch,
+      sort: sortBy,
+      page,
+      limit: 10,
+    };
+    if (category) params.category = category;
+    if (budgetType) params.budgetType = budgetType;
+    if (remote !== "") params.remote = remote;
 
-      const searchMatch =
-        gig.title?.toLowerCase().includes(searchLower) ||
-        gig.category?.toLowerCase().includes(searchLower);
+    const res = await searchGigs(params);
 
-      const experienceMatch =
-        experience === "All" || gig.experienceLevel === experience;
-
-      const locationMatch =
-        location === "Any" ||
-        (location === "Remote" && gig.location?.remote) ||
-        (location === "Hybrid" && gig.location?.type === "Hybrid") ||
-        (location === "Onsite" && gig.location?.type === "Onsite");
-
-      let budgetMatch = true;
-
-      if (budget === "$100-$500") {
-        budgetMatch = gig.budget?.max <= 500;
-      }
-
-      if (budget === "$500-$1000") {
-        budgetMatch = gig.budget?.min >= 500 && gig.budget?.max <= 1000;
-      }
-
-      if (budget === "$1000+") {
-        budgetMatch = gig.budget?.min >= 1000;
-      }
-
-      return searchMatch && experienceMatch && budgetMatch && locationMatch;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "budget-high":
-          return (b.budget?.max || 0) - (a.budget?.max || 0);
-
-        case "budget-low":
-          return (a.budget?.min || 0) - (b.budget?.min || 0);
-
-        case "latest":
-        default:
-          return new Date(b.createdAt) - new Date(a.createdAt);
-      }
+    setGigs(res.data.gigs || []);
+    setPagination({
+      totalPages: res.data.totalPages || 1,
+      totalResults: res.data.totalResults || 0,
     });
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <DashboardLayout>
       <div className="p-8 bg-slate-50/50 min-h-screen">
-        {/* Header - Upgraded with professional typography and accent badge */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200/60">
           <div>
             <div className="flex items-center gap-3">
@@ -108,7 +99,7 @@ export default function GigMarketplace() {
             </p>
           </div>
 
-          {/* Active Counters Summary */}
+          {/* Sort Summary */}
           <div className="hidden sm:flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-sm text-sm font-medium text-slate-600">
             <ArrowUpDown size={15} className="text-slate-400" />
             <select
@@ -123,7 +114,7 @@ export default function GigMarketplace() {
           </div>
         </div>
 
-        {/* Search - Elevated wrapper with shadow parameters */}
+        {/* Search */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 mb-8 transition-all duration-200 focus-within:shadow-md focus-within:border-blue-200">
           <div className="relative">
             <Search
@@ -132,16 +123,19 @@ export default function GigMarketplace() {
             />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
               placeholder="Search active project assignments, technical categories..."
               className="w-full bg-slate-50 text-slate-800 rounded-xl pl-12 pr-4 py-3 outline-none border border-slate-200 transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50"
             />
           </div>
         </div>
 
-        {/* Two-Column Grid Matching Your Original Code Structure */}
+        {/* Two-Column Grid */}
         <div className="grid grid-cols-12 gap-6">
-          {/* Filters Column (col-span-3) */}
+          {/* Filters Column */}
           <div className="col-span-12 lg:col-span-3">
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sticky top-5 space-y-6">
               <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 text-slate-800">
@@ -154,17 +148,23 @@ export default function GigMarketplace() {
               <div className="space-y-5">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                    Experience Level
+                    Category
                   </label>
                   <select
-                    value={experience}
-                    onChange={(e) => setExperience(e.target.value)}
+                    value={category}
+                    onChange={(e) => {
+                      setPage(1);
+                      setCategory(e.target.value);
+                    }}
                     className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-3 outline-none transition focus:border-blue-500 focus:bg-white text-sm font-medium"
                   >
-                    <option value="All">All Levels</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Expert">Expert</option>
+                    <option value="">All Categories</option>
+                    <option value="web development">Web Development</option>
+                    <option value="mobile development">
+                      Mobile Development
+                    </option>
+                    <option value="ai">AI</option>
+                    <option value="design">Design</option>
                   </select>
                 </div>
 
@@ -173,14 +173,16 @@ export default function GigMarketplace() {
                     Budget Target
                   </label>
                   <select
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
+                    value={budgetType}
+                    onChange={(e) => {
+                      setPage(1);
+                      setBudgetType(e.target.value);
+                    }}
                     className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-3 outline-none transition focus:border-blue-500 focus:bg-white text-sm font-medium"
                   >
-                    <option value="All">Any Scale</option>
-                    <option value="₹100-₹500">Max ₹500</option>
-                    <option value="₹500-₹1000">₹500 - ₹1000</option>
-                    <option value="₹1000+">₹1000+</option>
+                    <option value="">All Budgets</option>
+                    <option value="fixed">Fixed</option>
+                    <option value="hourly">Hourly</option>
                   </select>
                 </div>
 
@@ -189,167 +191,233 @@ export default function GigMarketplace() {
                     Work Location
                   </label>
                   <select
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    value={remote}
+                    onChange={(e) => {
+                      setPage(1);
+                      setRemote(e.target.value); // Fixed: Directly updates remote
+                    }}
                     className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-3 outline-none transition focus:border-blue-500 focus:bg-white text-sm font-medium"
                   >
-                    <option value="Any">Any Arrangement</option>
-                    <option value="Remote">Remote Operations</option>
-                    <option value="Hybrid">Hybrid Models</option>
-                    <option value="Onsite">Onsite Execution</option>
+                    <option value="">All Locations</option>
+                    <option value="true">Remote Only</option>
+                    <option value="false">On-site Only</option>
                   </select>
                 </div>
               </div>
             </div>
+            <div className="flex justify-center items-center gap-4 mt-10">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((prev) => prev - 1)}
+                className="px-4 py-2 border rounded-lg disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {page} of {pagination.totalPages}
+              </span>
+
+              <button
+                disabled={page === pagination.totalPages}
+                onClick={() => setPage((prev) => prev + 1)}
+                className="px-4 py-2 border rounded-lg disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
 
-          {/* Gig Cards Feed Column (col-span-9) */}
+          {/* Gig Cards Feed Column */}
           <div className="col-span-12 lg:col-span-9 space-y-5">
-            {filtered.map((gig) => (
-              <div
-                key={gig._id}
-                className="group bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:border-blue-200 hover:-translate-y-0.5 relative overflow-hidden"
-              >
-                {/* Visual anchor stripe showing on card hover state */}
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-blue-600 transition-all duration-300" />
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-sm text-slate-500">
+                {pagination.totalResults} gigs found
+              </p>
+              {loading && (
+                <Loader2 className="animate-spin text-blue-500" size={20} />
+              )}
+            </div>
 
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-md uppercase tracking-wide">
-                        <Briefcase size={12} />
-                        {gig.category || "General"}
-                      </span>
-                      {gig.experienceLevel && (
-                        <span className="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-1 rounded-md">
-                          {gig.experienceLevel}
+            {!loading &&
+              gigs.map((gig) => (
+                <div
+                  key={gig._id}
+                  className="group bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:border-blue-200 hover:-translate-y-0.5 relative overflow-hidden"
+                >
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-blue-600 transition-all duration-300" />
+
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-md uppercase tracking-wide">
+                          <Briefcase size={12} />
+                          {gig.category || "General"}
                         </span>
-                      )}
-                    </div>
+                        {gig.experienceLevel && (
+                          <span className="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-1 rounded-md">
+                            {gig.experienceLevel}
+                          </span>
+                        )}
+                      </div>
 
-                    <h2 className="text-xl font-bold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors duration-200">
-                      {gig.title}
-                    </h2>
-                  </div>
-                  {user.role === "freelancer" ? (
-                    <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-blue-200 self-start sm:self-center text-sm"
-                    onClick={() => {navigate(`/freelancer/gig/${gig._id}`)}}>
-                      View
-                    </button>
-                  ) : user.role === "client" ? (
-                    <button className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-amber-200 self-start sm:self-center text-sm"
-                    onClick= {() => navigate("/client/projects")}>
-                      Manage Bids
-                    </button>
-                  ) : user.role === "admin" ? (
-                    <button className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-rose-200 self-start sm:self-center text-sm">
-                      Moderate
-                    </button>
-                  ) : null}
-                </div>
-
-                {/* Sub-Card Grid Matrix Component */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-5 border-t border-slate-100 text-sm font-medium text-slate-600">
-                  <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
-                    <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
-                      <FaRupeeSign size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
-                        Budget Scale
-                      </p>
-                      <p className="text-slate-700 font-bold text-xs truncate">
-                        {gig.budget?.budgetType === "hourly"
-                          ? "Hourly"
-                          : "Fixed"}{" "}
-                        <span className="font-normal text-slate-500">
-                          (${gig.budget?.min || 0}-${gig.budget?.max || 0})
-                        </span>
+                      <h2 className="text-xl font-bold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors duration-200">
+                        {gig.title}
+                      </h2>
+                      <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                        {gig.description}
                       </p>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
-                    <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 shrink-0">
-                      <Clock size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
-                        Timeline
-                      </p>
-                      <p className="text-slate-700 font-bold text-xs truncate">
-                        {gig.duration || "Flexible Scale"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
-                    <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
-                      <MapPin size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
-                        Environment
-                      </p>
-                      <p className="text-slate-700 font-bold text-xs truncate">
-                        {gig.location?.remote
-                          ? "Remote"
-                          : `${gig.location?.city || "Local Ops"}`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
-                    <div className="p-1.5 rounded-lg bg-amber-50 text-amber-500 shrink-0">
-                      <Star size={16} className="fill-amber-500" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
-                        Rating Cap
-                      </p>
-                      <p className="text-slate-700 font-bold text-xs truncate">
-                        {gig.rating ? `${gig.rating} / 5.0` : "New System"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Technical Requirement Section */}
-                {gig.skillsRequired && gig.skillsRequired.length > 0 && (
-                  <div className="flex gap-1.5 mt-5 flex-wrap items-center">
-                    <span className="text-xs text-slate-400 font-bold mr-1 uppercase tracking-wider">
-                      Requirements:
-                    </span>
-                    {gig.skillsRequired.map((skill, idx) => (
-                      <span
-                        key={`${gig._id}-skill-${idx}`}
-                        className="bg-slate-100/80 text-slate-600 font-semibold px-3 py-1 rounded-lg text-xs border border-slate-200/40 transition hover:bg-slate-200/60"
+                    {user?.role === "freelancer" ? (
+                      <button
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-blue-200 self-start sm:self-center text-sm"
+                        onClick={() => navigate(`/freelancer/gig/${gig._id}`)}
                       >
-                        {skill}
-                      </span>
-                    ))}
+                        View
+                      </button>
+                    ) : user?.role === "client" ? (
+                      <button
+                        className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-amber-200 self-start sm:self-center text-sm"
+                        onClick={() => navigate("/client/projects")}
+                      >
+                        Manage Bids
+                      </button>
+                    ) : user?.role === "admin" ? (
+                      <button className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-sm transition hover:shadow-md hover:shadow-rose-200 self-start sm:self-center text-sm">
+                        Moderate
+                      </button>
+                    ) : null}
                   </div>
-                )}
 
-                {/* Footer Meta Timestamp */}
-                <div className="mt-5 pt-4 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400 font-medium">
-                  <span>Escrow Protection Active</span>
-                  <span>
-                    Posted:{" "}
-                    {gig.createdAt
-                      ? new Date(gig.createdAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "Recently Available"}
-                  </span>
+                  {/* Sub-Card Grid Matrix */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-5 border-t border-slate-100 text-sm font-medium text-slate-600">
+                    <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                      <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                        <FaRupeeSign size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
+                          Budget Scale
+                        </p>
+                        <p className="text-slate-700 font-bold text-xs truncate">
+                          {gig.budget?.budgetType === "hourly"
+                            ? "Hourly "
+                            : "Fixed "}
+                          <span className="font-normal text-slate-500">
+                            (₹{gig.budget?.min || 0}-₹{gig.budget?.max || 0})
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                      <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                        <Clock size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
+                          Timeline
+                        </p>
+                        <p className="text-slate-700 font-bold text-xs">
+                          {gig.milestones?.length || 0} Milestones
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                      <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
+                        <MapPin size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">
+                          Environment
+                        </p>
+                        <p className="text-slate-700 font-bold text-xs truncate">
+                          {gig.location?.remote
+                            ? "Remote"
+                            : `${gig.location?.city || "Local Ops"}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                      <div className="p-1.5 rounded-lg bg-amber-50 text-amber-500 shrink-0">
+                        <Star size={16} className="fill-amber-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase">Status</p>
+
+                        <p className="font-bold text-xs capitalize">
+                          {gig.status}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Technical Requirement Section */}
+                  {gig.skillsRequired && gig.skillsRequired.length > 0 && (
+                    <div className="flex gap-1.5 mt-5 flex-wrap items-center">
+                      <span className="text-xs text-slate-400 font-bold mr-1 uppercase tracking-wider">
+                        Requirements:
+                      </span>
+                      {gig.skillsRequired.map((skill, idx) => (
+                        <span
+                          key={`${gig._id}-skill-${idx}`}
+                          className="bg-slate-100/80 text-slate-600 font-semibold px-3 py-1 rounded-lg text-xs border border-slate-200/40 transition hover:bg-slate-200/60"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Footer Meta Timestamp */}
+                  <div className="mt-5 pt-4 border-t border-slate-50 flex items-center justify-between text-xs text-slate-400 font-medium">
+                    <span>Escrow Protection Active</span>
+                    <span>
+                      Posted:{" "}
+                      {gig.createdAt
+                        ? new Date(gig.createdAt).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )
+                        : "Recently Available"}
+                    </span>
+                  </div>
                 </div>
+              ))}
+
+            {/* Pagination Controls */}
+            {gigs.length > 0 && (
+              <div className="flex justify-center items-center gap-4 mt-10">
+                <button
+                  disabled={page === 1 || loading}
+                  onClick={() => setPage((prev) => prev - 1)}
+                  className="px-4 py-2 border border-slate-200 rounded-lg disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Previous
+                </button>
+
+                <span className="text-sm font-medium text-slate-600">
+                  Page {page} of {pagination.totalPages}
+                </span>
+
+                <button
+                  disabled={page >= pagination.totalPages || loading}
+                  onClick={() => setPage((prev) => prev + 1)}
+                  className="px-4 py-2 border border-slate-200 rounded-lg disabled:opacity-50 hover:bg-slate-50 transition"
+                >
+                  Next
+                </button>
               </div>
-            ))}
+            )}
 
             {/* Graceful Empty Result Vector */}
-            {filtered.length === 0 && (
+            {!loading && gigs.length === 0 && (
               <div className="text-center py-16 bg-white border border-dashed border-slate-300 rounded-2xl p-8 shadow-sm">
                 <div className="inline-flex p-4 bg-blue-50 text-blue-600 rounded-full mb-4">
                   <Search size={32} />
