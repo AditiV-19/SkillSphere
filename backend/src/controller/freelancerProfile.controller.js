@@ -230,9 +230,6 @@ export const searchFreelancers = async (req, res) => {
 
     const skip = (pageNumber - 1) * limitNumber;
 
-    const totalResults = await FreelancerProfile.countDocuments(query);
-    const totalPages = Math.ceil(totalResults / limitNumber);
-
     if (searchText) {
       query.$or = [
         {
@@ -278,6 +275,9 @@ export const searchFreelancers = async (req, res) => {
     if (availability) {
       query["availability.status"] = availability;
     }
+
+    const totalResults = await FreelancerProfile.countDocuments(query);
+    const totalPages = Math.ceil(totalResults / limitNumber);
 
     let sortOption = {};
 
