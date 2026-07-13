@@ -56,6 +56,12 @@ const freelancerSchema = new Schema(
       default: "",
     },
 
+    hourlyRate: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     availability: {
       status: {
         type: String,

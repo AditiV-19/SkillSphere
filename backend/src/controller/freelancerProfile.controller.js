@@ -211,7 +211,7 @@ export const searchFreelancers = async (req, res) => {
     const {
       q,
       location,
-      experienceLevel,
+      // experienceLevel,
       minRate,
       maxRate,
       minRating,
@@ -272,12 +272,18 @@ export const searchFreelancers = async (req, res) => {
       };
     }
 
+    if (minRate || maxRate) {
+      query.hourlyRate = {};
+      if (minRate) query.hourlyRate.$gte = Number(minRate);
+      if (maxRate) query.hourlyRate.$lte = Number(maxRate);
+    }
+
     if (availability) {
       query["availability.status"] = availability;
     }
 
     const totalResults = await FreelancerProfile.countDocuments(query);
-    const totalPages = Math.ceil(totalResults / limitNumber);
+    const totalPages = Math.max(1, Math.ceil(totalResults / limitNumber));
 
     let sortOption = {};
 

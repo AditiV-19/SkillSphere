@@ -9,6 +9,7 @@ import {
   Briefcase,
   ArrowUpDown,
   Loader2,
+  X,
 } from "lucide-react";
 import { searchGigs } from "../services/api";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
@@ -130,6 +131,19 @@ const fetchGigs = async () => {
               placeholder="Search active project assignments, technical categories..."
               className="w-full bg-slate-50 text-slate-800 rounded-xl pl-12 pr-4 py-3 outline-none border border-slate-200 transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50"
             />
+            {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPage(1);
+                    setSearch("");
+                  }}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition"
+                  title="Clear search"
+                >
+                  <X size={18} />
+                </button>
+              )}
           </div>
         </div>
 

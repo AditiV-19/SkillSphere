@@ -19,40 +19,34 @@ export default function BrowseFreelancers() {
 
   // Master Network Content States
   const [freelancers, setFreelancers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Filtering States
   const [search, setSearch] = useState("");
-
   const [location, setLocation] = useState("");
-
   const [availability, setAvailability] = useState("");
-
   const [minRating, setMinRating] = useState("");
-
   const [sort, setSort] = useState("");
-
   const [page, setPage] = useState(1);
-
   const [pagination, setPagination] = useState({
     totalPages: 1,
     totalResults: 0,
   });
 
+  const [loading, setLoading] = useState(true);
   const [debouncedSearch, setDebouncedSearch] = useState(search);
-
-  useEffect(() => {
-    fetchFreelancerProfiles();
-  }, [debouncedSearch, location, availability, minRating, sort, page]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 900);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    fetchFreelancerProfiles();
+  }, [debouncedSearch, location, availability, minRating, sort, page]);
 
   const fetchFreelancerProfiles = async () => {
     try {
@@ -86,16 +80,6 @@ export default function BrowseFreelancers() {
       setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="p-8 min-h-screen bg-slate-50/50 flex items-center justify-center text-slate-500 font-medium text-sm">
-          Streaming active marketplace developer indexes...
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout>
@@ -148,7 +132,7 @@ export default function BrowseFreelancers() {
             <div className="relative w-full">
               <Search
                 className="absolute left-3 top-2.5 text-blue-500"
-                size={18}
+                size={20}
               />
               <input
                 value={search}
