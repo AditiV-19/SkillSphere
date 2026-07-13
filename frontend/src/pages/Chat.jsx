@@ -8,7 +8,7 @@ import {
 import { useLocation } from "react-router-dom";
 import socket from "../services/socket";
 import Sidebar from "../components/Sidebar";
-import { FaPaperclip } from "react-icons/fa";
+import { FaPaperclip, FaChevronLeft } from "react-icons/fa";
 
 export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -17,7 +17,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
-  const [isTyping, setIsTyping] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
   const typingTimeout = useRef(null);
   const bottomRef = useRef(null);
   const activeConversationIdRef = useRef(null);
@@ -36,12 +36,10 @@ export default function Chat() {
     });
 
     if (!text.trim() && !selectedFile) {
-      console.log("Message and file are empty");
       return;
     }
 
     if (!selectedConversation) {
-      console.log("No conversation selected");
       return;
     }
 
@@ -75,18 +73,14 @@ export default function Chat() {
       fileType,
     });
 
-    console.log("Message emitted");
-
     setText("");
     setSelectedFile(null);
   };
 
-  //FILE
   const handleFile = (e) => {
     setSelectedFile(e.target.files[0]);
   };
 
-  // Helper to update the sidebar preview instantly
   const updateSidebarLastMessage = (convId, msgText, isActive) => {
     setConversations((prev) =>
       prev.map((conversation) =>
@@ -101,16 +95,14 @@ export default function Chat() {
     );
   };
 
-  // -------------------------------
-  // Fetch all conversations
-  // -------------------------------
   useEffect(() => {
     const fetchConversations = async () => {
       try {
         const res = await getConversations();
         setConversations(res.data.conversations);
 
-        if (!selectedConversation && res.data.conversations.length > 0) {
+        // Auto-select first conversation only on desktop sizes
+        if (!selectedConversation && res.data.conversations.length > 0 && window.innerWidth > 768) {
           setSelectedConversation(res.data.conversations[0]);
         }
       } catch (err) {
@@ -122,9 +114,6 @@ export default function Chat() {
     fetchConversations();
   }, []);
 
-  // -------------------------------
-  // Fetch messages of selected conversation
-  // -------------------------------
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -132,7 +121,6 @@ export default function Chat() {
       try {
         const res = await getMessages(selectedConversation._id);
         setMessages(res.data.messages);
-
         await markMessagesAsRead(selectedConversation._id);
 
         setConversations((prev) =>
@@ -150,9 +138,6 @@ export default function Chat() {
     fetchMessages();
   }, [selectedConversation]);
 
-  // -------------------------------
-  // Join socket room
-  // -------------------------------
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -163,18 +148,13 @@ export default function Chat() {
     };
   }, [selectedConversation]);
 
-  // -------------------------------
-  // Listen for new messages
-  // -------------------------------
   useEffect(() => {
     const handleReceiveMessage = async (message) => {
       const conversationId = message.conversation?._id || message.conversation;
-      const isActiveConversation =
-        conversationId === activeConversationIdRef.current;
+      const isActiveConversation = conversationId === activeConversationIdRef.current;
 
       if (isActiveConversation) {
         setMessages((prev) => [...prev, message]);
-
         try {
           await markMessagesAsRead(conversationId);
         } catch (err) {
@@ -182,11 +162,7 @@ export default function Chat() {
         }
       }
 
-      updateSidebarLastMessage(
-        conversationId,
-        message.text,
-        isActiveConversation,
-      );
+      updateSidebarLastMessage(conversationId, message.text || "Attached a file", isActiveConversation);
     };
 
     socket.on("receiveMessage", handleReceiveMessage);
@@ -196,17 +172,10 @@ export default function Chat() {
     };
   }, []);
 
-  // -------------------------------
-  // Scroll down chat comes
-  // -------------------------------
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isTyping]);
 
-
-  // -------------------------------
-  // Typing indicator detector
-  // -------------------------------
   useEffect(() => {
     const handleTyping = ({ conversationId }) => {
       if (conversationId === activeConversationIdRef.current) {
@@ -229,30 +198,40 @@ export default function Chat() {
     };
   }, []);
 
-
-
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center text-slate-500 font-medium">
-        Loading Messages...
+      <div className="h-screen flex items-center justify-center text-blue-600 font-semibold bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          Loading Workspace...
+        </div>
       </div>
     );
   }
+
   return (
-    <div className="h-screen flex bg-gray-100">
+    <div className="h-screen flex bg-white overflow-hidden text-slate-800 font-sans">
       <Sidebar />
+      
       {/* ============================
-          LEFT SIDEBAR
+          LEFT SIDEBAR (CONVERSATIONS)
       ============================ */}
-      <div className="w-80 border-r bg-white overflow-y-auto flex flex-col">
-        <h2 className="text-xl font-bold p-5 border-b text-slate-800">
-          Messages
-        </h2>
+      <div 
+        className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-80 lg:w-96 flex-col border-r border-slate-200 bg-slate-50 h-full shrink-0 transition-all`}
+      >
+        <div className="p-6 border-b border-slate-200 bg-white shadow-sm z-10">
+          <h2 className="text-2xl font-extrabold text-black-900 tracking-tight">
+            Messages
+          </h2>
+        </div>
 
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
-            <div className="p-5 text-gray-500 text-sm text-center mt-4">
-              No conversations found.
+            <div className="p-8 text-slate-400 text-sm text-center flex flex-col items-center gap-3">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 mb-2">
+                <FaPaperclip size={24} />
+              </div>
+              <p>Your inbox is empty.</p>
             </div>
           ) : (
             conversations.map((conversation) => {
@@ -264,23 +243,25 @@ export default function Chat() {
                 <div
                   key={conversation._id}
                   onClick={() => setSelectedConversation(conversation)}
-                  className={`p-4 border-b cursor-pointer transition-colors hover:bg-slate-50 ${
+                  className={`p-4 border-b border-slate-100 cursor-pointer transition-all duration-200 ${
                     selectedConversation?._id === conversation._id
-                      ? "bg-blue-50/50 border-l-4 border-l-blue-600"
-                      : "border-l-4 border-l-transparent"
+                      ? "bg-blue-50 border-l-4 border-l-blue-600 shadow-inner"
+                      : "bg-white border-l-4 border-l-transparent hover:bg-slate-50"
                   }`}
                 >
-                  <h3 className="font-semibold text-slate-800">
-                    {otherUser?.name || "Unknown User"}
-                  </h3>
-                  <p className="text-sm text-slate-500 truncate mt-0.5">
-                    {conversation.lastMessage || "No messages yet"}
+                  <div className="flex justify-between items-center mb-1">
+                    <h3 className={`font-bold ${selectedConversation?._id === conversation._id ? "text-black-900" : "text-slate-700"}`}>
+                      {otherUser?.name || "Verified User"}
+                    </h3>
+                    {conversation.unreadCount > 0 && (
+                      <div className="bg-blue-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+                        {conversation.unreadCount}
+                      </div>
+                    )}
+                  </div>
+                  <p className={`text-sm truncate ${conversation.unreadCount > 0 ? "text-blue-800 font-semibold" : "text-slate-500"}`}>
+                    {conversation.lastMessage || "Started a conversation"}
                   </p>
-                  {conversation.unreadCount > 0 && (
-                    <div className="bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                      {conversation.unreadCount}
-                    </div>
-                  )}
                 </div>
               );
             })
@@ -291,134 +272,154 @@ export default function Chat() {
       {/* ============================
           RIGHT CHAT WINDOW
       ============================ */}
-      <div className="flex flex-col flex-1 bg-white">
+      <div className={`${!selectedConversation ? 'hidden md:flex' : 'flex'} flex-col flex-1 bg-white h-full relative`}>
         {!selectedConversation ? (
-          <div className="flex-1 flex items-center justify-center text-slate-400 bg-slate-50">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-slate-600 mb-1">
-                Your Messages
+          <div className="flex-1 flex items-center justify-center bg-slate-50 border-l border-slate-200">
+            <div className="text-center max-w-sm px-6">
+              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 mx-auto mb-6 shadow-sm border border-blue-100">
+                <FaPaperclip size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">
+                Professional Workspace
               </h3>
-              <p className="text-sm">
-                Select a conversation from the sidebar to start chatting
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Select a conversation from the sidebar to securely message clients and collaborate on project files.
               </p>
             </div>
           </div>
         ) : (
           <>
-            {/* Header */}
-            <div className="border-b bg-white p-4 shadow-sm z-10">
-              <h2 className="font-bold text-lg text-slate-800">
-                {selectedConversation.participants.find(
-                  (user) => user._id !== currentUser.id,
-                )?.name || "Chat"}
-              </h2>
+            {/* Active Chat Header */}
+            <div className="bg-white px-6 py-4 flex items-center gap-4 border-b border-slate-200 shadow-sm z-10">
+              <button 
+                onClick={() => setSelectedConversation(null)}
+                className="md:hidden p-2 -ml-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <FaChevronLeft size={18} />
+              </button>
+              
+              <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-lg border border-blue-200">
+                {selectedConversation.participants.find(u => u._id !== currentUser.id)?.name?.charAt(0) || "U"}
+              </div>
+              <div>
+                <h2 className="font-bold text-lg text-slate-800 leading-tight">
+                  {selectedConversation.participants.find(
+                    (user) => user._id !== currentUser.id,
+                  )?.name || "Chat"}
+                </h2>
+                <p className="text-xs text-blue-600 font-medium tracking-wide uppercase">Active Contract</p>
+              </div>
             </div>
 
             {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto p-5 bg-slate-50 flex flex-col">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/50 flex flex-col scroll-smooth">
               {messages.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <p className="text-center text-slate-400 text-sm bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100">
-                    This is the beginning of your conversation.
+                  <p className="text-center text-slate-500 text-sm bg-white px-6 py-3 rounded-full shadow-sm border border-slate-200 font-medium">
+                    Workspace connection established. Start collaborating.
                   </p>
                 </div>
               ) : (
                 messages.map((message) => {
-                  // Safety check: sometimes populated objects are passed, sometimes just IDs
                   const senderId = message.sender._id || message.sender;
                   const ownMessage = senderId === currentUser.id;
 
                   return (
                     <div
                       key={message._id}
-                      className={`mb-4 flex ${
+                      className={`mb-5 flex ${
                         ownMessage ? "justify-end" : "justify-start"
                       }`}
                     >
                       <div
-                        className={`px-4 py-2.5 rounded-2xl max-w-md wrap-break-word text-sm shadow-sm ${
+                        className={`px-5 py-3.5 max-w-[85%] md:max-w-md wrap-break-word text-sm shadow-sm flex flex-col ${
                           ownMessage
-                            ? "bg-blue-600 text-white rounded"
-                            : "bg-white border border-slate-200 text-slate-800 rounded"
+                            ? "bg-blue-600 text-white rounded-2xl rounded-br-sm"
+                            : "bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-bl-sm"
                         }`}
                       >
-                        {message.text && <p>{message.text}</p>}
                         {message.fileUrl && (
                           <a
                             href={message.fileUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="underline"
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl mb-2 text-sm font-medium transition-colors ${
+                              ownMessage ? "bg-blue-700/50 hover:bg-blue-700 text-white" : "bg-slate-50 hover:bg-slate-100 text-blue-600 border border-slate-100"
+                            }`}
                           >
-                            <FaPaperclip /> {message.fileName}{" "}
+                            <FaPaperclip />
+                            <span className="truncate">{message.fileName || "View Attachment"}</span>
                           </a>
                         )}
+                        
+                        {message.text && <p className="leading-relaxed">{message.text}</p>}
 
-                        <p
-                          className={`text-[10px] mt-1 text-right ${
-                            ownMessage ? "text-blue-100" : "text-slate-400"
+                        <span
+                          className={`text-[10px] mt-2 text-right font-medium ${
+                            ownMessage ? "text-blue-200" : "text-slate-400"
                           }`}
                         >
                           {new Date(message.createdAt).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
-                        </p>
+                        </span>
                       </div>
                     </div>
                   );
                 })
               )}
-              <div ref={bottomRef} className="h-1" />
+              
+              {isTyping && (
+                <div className="flex justify-start mb-4">
+                  <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1.5">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={bottomRef} className="h-4" />
             </div>
 
-            {isTyping && (
-  <div className="px-5 py-2 text-sm text-gray-500 italic">
-    Typing...
-  </div>
-)}
-
-            {/* Message Input */}
-            <div className="border-t p-4 bg-white flex flex-col gap-2">
-              {/* Visual Indicator if a file is attached */}
+            {/* Message Input Area */}
+            <div className="bg-white border-t border-slate-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
+              {/* File Attachment Preview */}
               {selectedFile && (
-                <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg self-start">
+                <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-100 px-4 py-2 rounded-xl mb-3 w-fit shadow-sm">
                   <FaPaperclip />
-                  <span className="truncate max-w-50">
+                  <span className="truncate max-w-50 md:max-w-xs font-medium">
                     {selectedFile.name}
                   </span>
                   <button
                     onClick={() => setSelectedFile(null)}
-                    className="text-slate-400 hover:text-red-500 ml-2 font-bold"
+                    className="text-blue-400 hover:text-red-500 ml-2 font-bold p-1 rounded-md transition-colors"
                   >
                     ×
                   </button>
                 </div>
               )}
-              
 
-              <div className="flex gap-3 items-center w-full">
+              <div className="flex gap-3 items-end w-full">
                 <input type="file" hidden id="chatFile" onChange={handleFile} />
-
                 <label
                   htmlFor="chatFile"
-                  className="cursor-pointer text-slate-400 hover:text-blue-500 transition-colors p-2"
+                  className="cursor-pointer text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-200 p-3.5 rounded-xl transition-all"
+                  title="Attach File"
                 >
-                  <FaPaperclip size={20} />
+                  <FaPaperclip size={18} />
                 </label>
 
-                <input
+                <textarea
                   value={text}
                   onChange={(e) => {
                     setText(e.target.value);
-
                     socket.emit("typing", {
                       conversationId: selectedConversation._id,
                       userId: currentUser.id,
                     });
-
                     clearTimeout(typingTimeout.current);
-
                     typingTimeout.current = setTimeout(() => {
                       socket.emit("stopTyping", {
                         conversationId: selectedConversation._id,
@@ -432,14 +433,15 @@ export default function Chat() {
                       sendMessage();
                     }
                   }}
-                  placeholder="Type your message..."
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
+                  placeholder="Type your message here..."
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50 transition-all text-sm resize-none max-h-32 min-h-12"
+                  rows={1}
                 />
+                
                 <button
-                  // FIXED: Disabled only if BOTH text and file are missing
                   disabled={!text.trim() && !selectedFile}
                   onClick={sendMessage}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm shadow-md hover:shadow-lg h-auto"
                 >
                   Send
                 </button>
