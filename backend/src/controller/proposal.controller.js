@@ -34,7 +34,7 @@ export const applyToGig = async (req, res) => {
       type: "PROPOSAL",
       title: "New Proposal",
       message: `${freelancer?.firstName || 'A freelancer'} ${freelancer?.lastName || ""} submitted a proposal.`,
-      link: "/client/proposals",
+      link: "/client/gig/applications",
     });
     console.log("database done")
 
@@ -156,7 +156,7 @@ export const updateProposalStatus = async (req, res) => {
         type: "GIG_ACCEPTED",
         title: "Proposal Accepted",
         message: `Your proposal has been accepted.`,
-        link: "/my-gigs",
+        link: "/freelancer/assigned-gigs",
       });
 
     } else if (status === "rejected") {
@@ -167,7 +167,7 @@ export const updateProposalStatus = async (req, res) => {
         type: "GIG_REJECTED",
         title: "Proposal Rejected",
         message: "Unfortunately, your proposal was not selected.",
-        link: "/my-proposals",
+        link: "/freelancer/gig/applications",
       });
       
     } else if (status === "negotiating") {
@@ -178,7 +178,7 @@ export const updateProposalStatus = async (req, res) => {
         type: "NEGOTIATION",
         title: "Proposal Under Negotiation",
         message: "The client has started negotiating your proposal.",
-        link: "/my-proposals",
+        link: "/freelancer/gig/applications",
       });
 
       return res.json({

@@ -106,7 +106,7 @@ export const sidebarMenus = {
       route: "/client/projects",
     },
     {
-      label: "Applications",
+      label: "Proposals",
       icon: FaClipboardList,
       route: "/client/gig/applications",
     },

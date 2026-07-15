@@ -72,10 +72,8 @@ export const initializeSocket = (server) => {
 
         // Populate sender & receiver
         const populatedMessage = await Message.findById(message._id)
-          .populate("sender", "firstname lastname profilePicture")
-          .populate("receiver", "firstname lastname profilePicture");
-
-        console.log("Sending message to room:", conversationId);
+          .populate("sender", "username role email")
+          .populate("receiver", "username role email");
 
         // Emit to everyone in this conversation (sender included)
         io.to(conversationId).emit("receiveMessage", populatedMessage);
@@ -85,8 +83,8 @@ export const initializeSocket = (server) => {
           sender,
           type: "MESSAGE",
           title: "New Message",
-          message: `${populatedMessage.sender.firstname} sent you a message.`,
-          link: `/messages/${conversationId}`,
+          message: `${populatedMessage.sender.username} sent you a message.`,
+          link: `/chats/${conversationId}`,
           sendEmail: false,
         });
       } catch (err) {

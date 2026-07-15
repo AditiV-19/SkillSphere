@@ -530,7 +530,7 @@ export const inviteFreelancer = async (req, res) => {
           .json({ message: "Gig is no longer open for invites" });
       }
     }
-    console.log("updated")
+
     // TODO Week 3: fire a notification here (Socket.IO + email) using updatedGig data
     await sendNotification({
       recipient: freelancerUserId,
@@ -538,9 +538,8 @@ export const inviteFreelancer = async (req, res) => {
       type: "INVITATION",
       title: "New Invitation",
       message: `${clientProfile.companyName} invited you to apply for "${updatedGig.title}".`,
-      link: `/client/gig/${updatedGig._id}`,
+      link: `/freelancer/invitations`,
     });
-    console.log("updated notif too")
     
     return res.json({
       message: "Freelancer invited successfully",
@@ -810,7 +809,7 @@ export const updateMilestoneStatus = async (req, res) => {
         type: "MILESTONE",
         title: "Milestone Updated",
         message: `${freelancer.firstname} updated "${milestone.title}" to ${status}.`,
-        link: `/gigs/${gig._id}`,
+        link: `/client/gigs/${gig._id}`,
     });
 
     res.json({
