@@ -3,6 +3,7 @@ import { Gig } from "../models/gig.model.js";
 import { User } from "../models/user.model.js";
 import { ClientProfile, FreelancerProfile } from "../models/profile.model.js";
 import { generateReviewAnalytics } from "../utils/reviewAnalytics.js";
+import { sendNotification } from "../services/notification.services.js";
 
 export const createReview = async (req, res) => {
   try {
@@ -82,6 +83,17 @@ export const createReview = async (req, res) => {
       weight,
       comment,
     });
+
+   let reviewer = isClient ? await ClientProfile.findOne({ user: req.user.id }) : await FreelancerProfile.findOne({ user: req.user.id });
+    await sendNotification({
+        recipient: revieweeId,
+        sender: req.user.id,
+        type: "SYSTEM",
+        title: "New Review",
+        message: `${reviewer.firstName || reviewer.companyName || `A ${isClient ? 'client' : 'freelacer'}`} left you a review.`,
+        link: "/reviews",
+    });
+
 
     // 5. Recalculate weighted reputation
     const allReviewsForUser = await Review.find({ reviewee: revieweeId });

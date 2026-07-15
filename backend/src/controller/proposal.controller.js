@@ -1,6 +1,7 @@
 import { Proposal } from "../models/proposal.model.js";
 import { Gig } from "../models/gig.model.js";
-import { ClientProfile } from "../models/profile.model.js";
+import { ClientProfile, FreelancerProfile } from "../models/profile.model.js";
+import { sendNotification } from "../services/notification.services.js";
 
 export const applyToGig = async (req, res) => {
   try {
@@ -26,6 +27,16 @@ export const applyToGig = async (req, res) => {
     });
 
     // TODO Week 3: Fire real-time notification to the Client via Socket.IO/Email
+    const freelancer =  await FreelancerProfile.findOne({user: req.user.id})
+    await sendNotification({
+      recipient: gig.client,
+      sender: req.user.id,
+      type: "PROPOSAL",
+      title: "New Proposal",
+      message: `${freelancer?.firstName || 'A freelancer'} ${freelancer?.lastName || ""} submitted a proposal.`,
+      link: "/client/proposals",
+    });
+    console.log("database done")
 
     return res.status(201).json({
       success: true,
@@ -138,13 +149,44 @@ export const updateProposalStatus = async (req, res) => {
         },
         { returnDocument: "after" },
       );
-    }
 
-    return res.json({
-      success: true,
-      message: `Proposal status updated to ${status}`,
-      proposal,
-    });
+      await sendNotification({
+        recipient: proposal.freelancerUser,
+        sender: req.user.id,
+        type: "GIG_ACCEPTED",
+        title: "Proposal Accepted",
+        message: `Your proposal has been accepted.`,
+        link: "/my-gigs",
+      });
+
+    } else if (status === "rejected") {
+
+      await sendNotification({
+        recipient: proposal.freelancerUser,
+        sender: req.user.id,
+        type: "GIG_REJECTED",
+        title: "Proposal Rejected",
+        message: "Unfortunately, your proposal was not selected.",
+        link: "/my-proposals",
+      });
+      
+    } else if (status === "negotiating") {
+
+      await sendNotification({
+        recipient: proposal.freelancerUser,
+        sender: req.user.id,
+        type: "NEGOTIATION",
+        title: "Proposal Under Negotiation",
+        message: "The client has started negotiating your proposal.",
+        link: "/my-proposals",
+      });
+
+      return res.json({
+        success: true,
+        message: `Proposal status updated to ${status}`,
+        proposal,
+      });
+    }
   } catch (error) {
     return res
       .status(500)

@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { transporter } from "../config/mail.js";
 
 export const sendVerificationEmail = async (email, verificationToken) => {
@@ -32,3 +33,38 @@ export const sendVerificationEmail = async (email, verificationToken) => {
         `
     })
 }
+
+
+
+export const sendNotificationEmail = async ({ to, title, message }) => {
+  try {
+    await transporter.sendMail({
+      from: `"SkillSphere" <${process.env.EMAIL}>`,
+      to,
+      subject: title,
+
+      html: `
+        <div style="font-family:Arial;padding:30px">
+            <h2>${title}</h2>
+
+            <p>${message}</p>
+
+            <br>
+
+            <a href="${process.env.CLIENT_URL}"
+               style="
+               padding:12px 20px;
+               background:#4F46E5;
+               color:white;
+               text-decoration:none;
+               border-radius:8px;
+               ">
+               Open SkillSphere
+            </a>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};

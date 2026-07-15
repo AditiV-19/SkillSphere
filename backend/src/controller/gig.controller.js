@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Gig } from "../models/gig.model.js";
 import { ClientProfile } from "../models/profile.model.js";
 import { Proposal } from "../models/proposal.model.js";
+import { sendNotification } from "../services/notification.services.js";
 // ==========================================
 // 1. CREATE GIG (CONSOLIDATED & CLEANED)
 // ==========================================
@@ -488,6 +489,18 @@ export const inviteFreelancer = async (req, res) => {
         .json({ message: "Only clients can invite freelancers." });
     }
 
+    const gig = await Gig.findById(gigId);
+
+    if (
+      gig.invitedFreelancers.some(
+        (id) => id.toString() === freelancerUserId
+      )
+    ) {
+      return res.status(400).json({
+        message: "Freelancer has already been invited.",
+      });
+}
+
     // 2. Atomically verify ownership, status, and add the freelancer
     const updatedGig = await Gig.findOneAndUpdate(
       {
@@ -517,9 +530,18 @@ export const inviteFreelancer = async (req, res) => {
           .json({ message: "Gig is no longer open for invites" });
       }
     }
-
+    console.log("updated")
     // TODO Week 3: fire a notification here (Socket.IO + email) using updatedGig data
-
+    await sendNotification({
+      recipient: freelancerUserId,
+      sender: req.user.id,
+      type: "INVITATION",
+      title: "New Invitation",
+      message: `${clientProfile.companyName} invited you to apply for "${updatedGig.title}".`,
+      link: `/client/gig/${updatedGig._id}`,
+    });
+    console.log("updated notif too")
+    
     return res.json({
       message: "Freelancer invited successfully",
       gig: updatedGig,
@@ -578,7 +600,6 @@ export const uninviteFreelancer = async (req, res) => {
 // ==========================================
 // 8. Invitations on Freelancers side
 // ==========================================
-
 export const getFreelancerInvitations = async (req, res) => {
   try {
     // req.user.id is extracted directly from the encrypted cookie/JWT header
@@ -677,7 +698,6 @@ export const getActiveGigs = async (req, res) => {
 };
 
 // Milestone Status
-
 export const getGigProgress = async (req, res) => {
   try {
     const { gigId } = req.params;
@@ -781,6 +801,17 @@ export const updateMilestoneStatus = async (req, res) => {
       : 0;
 
     await gig.save();
+
+    const freelancer = await User.findById(req.user.id);
+
+    await sendNotification({
+        recipient: gig.client,
+        sender: req.user.id,
+        type: "MILESTONE",
+        title: "Milestone Updated",
+        message: `${freelancer.firstname} updated "${milestone.title}" to ${status}.`,
+        link: `/gigs/${gig._id}`,
+    });
 
     res.json({
       success: true,
@@ -962,7 +993,7 @@ export const searchGigs = async (req, res) => {
       query.status = status;
     }
 
-    const totalResults = await Gig.countDocuments({...query, status: "open"});
+    const totalResults = await Gig.countDocuments({ ...query, status: "open" });
     const totalPages = Math.max(1, Math.ceil(totalResults / limitNumber));
 
     let sortOption = {};
@@ -986,7 +1017,7 @@ export const searchGigs = async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-    const gigs = await Gig.find({...query, status: "open"})
+    const gigs = await Gig.find({ ...query, status: "open" })
       .populate("client", "companyName")
       .populate("assignedFreelancer", "username")
       .sort(sortOption)

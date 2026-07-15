@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 
 import { Message } from "../models/chat.model.js";
 import { Conversation } from "../models/chat.model.js";
+import { sendNotification } from "../services/notification.services.js";
 
 let io;
 
@@ -23,9 +24,11 @@ export const initializeSocket = (server) => {
      * Register user after login
      */
     socket.on("registerUser", (userId) => {
-      onlineUsers.set(userId, socket.id);
+      onlineUsers.set(userId.toString(), socket.id);
 
-      io.emit("onlineUsers", Array.from(onlineUsers.keys()));
+      socket.userId = userId.toString();
+
+      io.emit("onlineUsers", [...onlineUsers.keys()]);
 
       console.log("Online Users:", Array.from(onlineUsers.keys()));
     });
@@ -40,7 +43,15 @@ export const initializeSocket = (server) => {
 
     socket.on("sendMessage", async (data) => {
       try {
-        const { conversationId, sender, receiver, text, fileUrl, fileName, fileType } = data;
+        const {
+          conversationId,
+          sender,
+          receiver,
+          text,
+          fileUrl,
+          fileName,
+          fileType,
+        } = data;
 
         // Save message
         const message = await Message.create({
@@ -68,6 +79,16 @@ export const initializeSocket = (server) => {
 
         // Emit to everyone in this conversation (sender included)
         io.to(conversationId).emit("receiveMessage", populatedMessage);
+
+        await sendNotification({
+          recipient: receiver,
+          sender,
+          type: "MESSAGE",
+          title: "New Message",
+          message: `${populatedMessage.sender.firstname} sent you a message.`,
+          link: `/messages/${conversationId}`,
+          sendEmail: false,
+        });
       } catch (err) {
         console.error(err);
       }
@@ -77,16 +98,13 @@ export const initializeSocket = (server) => {
      * Disconnect
      */
     socket.on("disconnect", () => {
-      for (const [userId, socketId] of onlineUsers.entries()) {
-        if (socketId === socket.id) {
-          onlineUsers.delete(userId);
-          break;
-        }
+      if (socket.userId) {
+        onlineUsers.delete(socket.userId);
       }
 
-      io.emit("onlineUsers", Array.from(onlineUsers.keys()));
+      io.emit("onlineUsers", [...onlineUsers.keys()]);
 
-      console.log("Disconnected:", socket.id);
+      console.log(socket.id, "Disconnected");
     });
 
     socket.on("leaveConversation", (conversationId) => {
@@ -95,16 +113,21 @@ export const initializeSocket = (server) => {
     });
 
     socket.on("typing", ({ conversationId, userId }) => {
-    socket.to(conversationId).emit("userTyping", { conversationId, userId });
-});
+      socket.to(conversationId).emit("userTyping", { conversationId, userId });
+    });
 
-socket.on("stopTyping", ({ conversationId, userId }) => {
-  socket.to(conversationId).emit("userStoppedTyping", { conversationId, userId });
-});
-
+    socket.on("stopTyping", ({ conversationId, userId }) => {
+      socket
+        .to(conversationId)
+        .emit("userStoppedTyping", { conversationId, userId });
+    });
   });
 
   return io;
 };
 
 export const getIO = () => io;
+
+export const getUserSocket = (userId) => {
+  return onlineUsers.get(userId);
+};
