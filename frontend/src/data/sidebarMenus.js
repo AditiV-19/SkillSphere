@@ -13,6 +13,7 @@ import {
   FaTasks,
   FaEnvelopeOpen,
   FaSpinner,
+  FaBell,
 } from "react-icons/fa";
 
 export const sidebarMenus = {
@@ -57,6 +58,12 @@ export const sidebarMenus = {
       label: "Messages",
       icon: FaComments,
       route: "/chats",
+    },
+    
+    {
+      label: "Notifications",
+      icon: FaBell,
+      route: "/notifications",
     },
 
     {
@@ -114,6 +121,12 @@ export const sidebarMenus = {
       label: "Messages",
       icon: FaComments,
       route: "/chats",
+    },
+
+    {
+      label: "Notifications",
+      icon: FaBell,
+      route: "/notifications",
     },
 
     {

@@ -24,6 +24,7 @@ import GigProgress from "./pages/client/GigProgress";
 import GigWorkTracker from "./pages/freelancer/GigWorkTracker";
 import ActiveContracts from "./pages/client/ActiveContracts";
 import Chat from "./pages/Chat";
+import NotificationsPage from "./pages/NotificationsPage";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -210,6 +211,15 @@ export default function App() {
       <Route path="/chats" element={<Chat />} />
 
       <Route path="/chats/:conversationId" element={<Chat />} />
+
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute allowedRoles={["freelancer", "client"]}>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
 
     </Routes>
   );
