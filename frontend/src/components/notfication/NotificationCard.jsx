@@ -1,8 +1,10 @@
 import React from "react";
 import { useNotification } from "../../context/NotificationContext";
+import { useNavigate } from "react-router-dom";
 
 const NotificationCard = ({ notification }) => {
   const { readNotification, removeNotification } = useNotification();
+  const navigate = useNavigate();
 
   const handleClick = async () => {
     if (!notification.read) {
@@ -10,7 +12,7 @@ const NotificationCard = ({ notification }) => {
     }
 
     if (notification.link) {
-      window.location.href = notification.link;
+      navigate(notification.link);
     }
   };
 
