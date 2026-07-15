@@ -191,3 +191,24 @@ export const uploadChatFile = (file) => {
     },
   );
 };
+
+// Notification
+export const getNotifications = () => {
+  return API.get("/notifications");
+};
+
+export const getUnreadCount = () => {
+  return API.get("/notifications/unread-count");
+};
+
+export const markAsRead = (id) => {
+  return API.put(`/notifications/${id}/read`);
+};
+
+export const markAllAsRead = () => {
+  return API.put("/notifications/read-all");
+};
+
+export const deleteNotification = (id) => {
+  return API.delete(`/notifications/${id}`);
+};

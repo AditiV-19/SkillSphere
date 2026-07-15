@@ -4,9 +4,13 @@ import { BrowserRouter } from 'react-router-dom'
 
 import './index.css'
 import App from './App.jsx'
+import { NotificationProvider } from './context/NotificationContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
+  <NotificationProvider>
     <App />
+  </NotificationProvider>
+    
   </BrowserRouter>,
 )

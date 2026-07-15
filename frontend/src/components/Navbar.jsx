@@ -2,6 +2,7 @@ import { FaBell } from "react-icons/fa";
 import { useEffect, useState } from "react";
 
 import { getProfile } from "../services/api";
+import NotificationBell from "./notfication/NotificationBell";
 
 export default function Navbar() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -33,11 +34,7 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-5">
-        <button className="relative p-3 rounded-full bg-white shadow hover:bg-gray-100 transition">
-          <FaBell size={18} />
-
-          <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 rounded-full"></span>
-        </button>
+        <NotificationBell />
 
         <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow">
           <div className="w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">

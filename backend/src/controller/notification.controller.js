@@ -77,7 +77,7 @@ export const markAllAsRead = async (req, res) => {
 
 export const deleteNotification = async (req, res) => {
   try {
-    await Notification.findByIdAndDelete({
+    const notification = await Notification.findByIdAndDelete({
       _id: req.params.id,
       recipient: req.user.id,
     });
