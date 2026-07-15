@@ -25,12 +25,6 @@ cron.schedule("* * * * *", async () => {
 
     for (const gig of gigs) {
       for (const milestone of gig.milestones) {
-        console.log(
-  "Milestone:",
-  milestone.title,
-  milestone.dueDate,
-  milestone.status
-);
         // Skip completed milestones
         if (milestone.status === "completed") {
           continue;
@@ -41,7 +35,7 @@ cron.schedule("* * * * *", async () => {
         const remainingDays = Math.ceil(
           (deadline - today) / (1000 * 60 * 60 * 24),
         );
-console.log("Remaining Days:", remainingDays);
+
         if (remainingDays < 0) {
           continue;
         }
