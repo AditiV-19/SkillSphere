@@ -78,6 +78,22 @@ const gigSchema = new Schema(
           enum: ["pending", "in_progress", "completed"],
           default: "pending",
         },
+        remindersSent: {
+          sevenDays: {
+            type: Boolean,
+            default: false,
+          },
+
+          threeDays: {
+            type: Boolean,
+            default: false,
+          },
+
+          oneDay: {
+            type: Boolean,
+            default: false,
+          },
+        },
       },
     ],
 
@@ -134,17 +150,17 @@ const gigSchema = new Schema(
         name: { type: String, required: true },
       },
     ],
-    
+
     progressLogs: [
-  {
-    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    message: { type: String, required: true, maxlength: 1000 },
-    milestone: { type: Schema.Types.ObjectId }, // optional — which milestone this update relates to
-    fileUrl: { type: String, default: "" },
-    fileName: { type: String, default: "" },
-    createdAt: { type: Date, default: Date.now },
-  },
-],
+      {
+        author: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        message: { type: String, required: true, maxlength: 1000 },
+        milestone: { type: Schema.Types.ObjectId }, // optional — which milestone this update relates to
+        fileUrl: { type: String, default: "" },
+        fileName: { type: String, default: "" },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

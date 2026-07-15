@@ -1,33 +1,29 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useNotification } from "../../context/NotificationContext";
-import NotificationCard from "./NotificationCard";
+import NotificationItem from "./NotificationItem";
 
 const NotificationDropdown = () => {
-  const { notifications, readAllNotifications } = useNotification();
-  const { unreadCount } = useNotification();
+  const { notifications, readAllNotifications, unreadCount } = useNotification();
 
   return (
     <div
       className="
-        absolute right-0 mt-3 
-        w-80 sm:w-96 
-        bg-white 
-        rounded-xl 
-        shadow-xl shadow-slate-200/50 
-        ring-1 ring-slate-900/5 
-        z-50 
+        absolute right-0 mt-3
+        w-80 sm:w-96
+        bg-white
+        rounded-xl
+        shadow-xl shadow-slate-200/50
+        ring-1 ring-slate-900/5
+        z-50
         overflow-hidden
         flex flex-col
       "
     >
-      {/* 1. Refined Header */}
       <div className="flex justify-between items-center px-4 py-3 bg-slate-50/80 border-b border-slate-100 backdrop-blur-sm">
-        <h3 className="font-semibold text-slate-800">
-          Notifications
-        </h3>
-        
-        {/* Only show the 'Mark all read' button if there are actually notifications */}
-        {unreadCount.length > 0 && (
+        <h3 className="font-semibold text-slate-800">Notifications</h3>
+
+        {unreadCount > 0 && (
           <button
             onClick={readAllNotifications}
             className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 hover:bg-blue-50 rounded-md"
@@ -37,10 +33,7 @@ const NotificationDropdown = () => {
         )}
       </div>
 
-      {/* 2. Scrollable List Container */}
-      <div className="max-h-100 overflow-y-auto overscroll-contain">
-        
-        {/* 3. Professional Empty State */}
+      <div className="max-h-96 overflow-y-auto overscroll-contain">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center">
             <div className="bg-slate-50 p-3 rounded-full mb-3">
@@ -62,17 +55,22 @@ const NotificationDropdown = () => {
             <p className="text-xs text-slate-400 mt-1">Check back later for new updates.</p>
           </div>
         ) : (
-          
-          /* 4. Seamless Card Integration */
           <div className="divide-y divide-slate-50">
             {notifications.map((notification) => (
-              <NotificationCard
+              <NotificationItem
                 key={notification._id}
                 notification={notification}
               />
             ))}
           </div>
         )}
+
+        <Link
+          to="/notifications"
+          className="block text-center p-3 text-sm font-medium text-slate-600 border-t hover:bg-slate-50"
+        >
+          View All Notifications
+        </Link>
       </div>
     </div>
   );

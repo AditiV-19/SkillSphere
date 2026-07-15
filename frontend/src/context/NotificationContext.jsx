@@ -1,7 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
-
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import socket from "../services/socket";
-
 import {
   getNotifications,
   getUnreadCount,
@@ -14,25 +12,27 @@ const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
-
   const [unreadCount, setUnreadCount] = useState(0);
-
   const [loading, setLoading] = useState(true);
 
-  const token = localStorage.getItem("token");
+  // avoid re-registering the socket listener on every render
+  const listenerAttached = useRef(false);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
   useEffect(() => {
     if (!token || !user) return;
 
     loadNotifications();
-
     connectSocket();
 
     return () => {
+      socket.off("newNotification");
       socket.disconnect();
+      listenerAttached.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadNotifications = async () => {
@@ -45,7 +45,6 @@ export const NotificationProvider = ({ children }) => {
       ]);
 
       setNotifications(notificationRes.data.notifications);
-
       setUnreadCount(unreadRes.data.count);
     } catch (err) {
       console.log(err);
@@ -57,13 +56,14 @@ export const NotificationProvider = ({ children }) => {
   const connectSocket = () => {
     socket.connect();
 
-    const userId = user?._id || user?.id
-
+    const userId = user?._id || user?.id;
     socket.emit("registerUser", userId);
+
+    if (listenerAttached.current) return;
+    listenerAttached.current = true;
 
     socket.on("newNotification", (notification) => {
       setNotifications((prev) => [notification, ...prev]);
-
       setUnreadCount((prev) => prev + 1);
     });
   };
@@ -91,10 +91,7 @@ export const NotificationProvider = ({ children }) => {
       await markAllAsRead();
 
       setNotifications((prev) =>
-        prev.map((notification) => ({
-          ...notification,
-          read: true,
-        }))
+        prev.map((notification) => ({ ...notification, read: true }))
       );
 
       setUnreadCount(0);
@@ -121,13 +118,9 @@ export const NotificationProvider = ({ children }) => {
         notifications,
         unreadCount,
         loading,
-
         readNotification,
-
         readAllNotifications,
-
         removeNotification,
-
         reloadNotifications: loadNotifications,
       }}
     >
@@ -136,6 +129,4 @@ export const NotificationProvider = ({ children }) => {
   );
 };
 
-export const useNotification = () => {
-  return useContext(NotificationContext);
-};
+export const useNotification = () => useContext(NotificationContext);

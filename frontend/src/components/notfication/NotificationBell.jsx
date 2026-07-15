@@ -41,7 +41,7 @@ const NotificationBell = () => {
             justify-center
             "
           >
-            {unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
 
         )}

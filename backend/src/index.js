@@ -6,6 +6,8 @@ import app from "./app.js";
 
 import { initializeSocket } from "./utils/sockets.js";
 
+import "./utils/milestoneReminder.cron.js";
+
 const PORT = process.env.PORT || 8000;
 
 const server = http.createServer(app);
