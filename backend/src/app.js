@@ -9,7 +9,7 @@ import gigRouter from './routes/gig.route.js'
 import reviewRouter from './routes/review.route.js'
 import chatRouter from './routes/chat.route.js'
 import notificationRouter from './routes/notification.route.js'
-
+import adminRouter from './routes/admin.routes.js'
 const app = express() 
 
 app.use(cors({
@@ -29,4 +29,6 @@ app.use("/api/v1/reviews", reviewRouter)
 app.use("/api/v1/chat", chatRouter)
 
 app.use("/api/v1/notifications", notificationRouter);
+
+app.use("/api/v1/admin", adminRouter);
 export default app

@@ -30,6 +30,20 @@ const userSchema = new Schema(
             required: true,
             enum: ['client', 'freelancer', 'admin'],
         },
+
+        isSuspended: {
+            type: Boolean,
+            default: false
+        },
+
+        suspendedReason: {
+            type: String,
+            default: ""
+        },
+        suspendedAt: {
+            type: Date,
+        },
+
         isVerified: {
             type: Boolean,
             default: false

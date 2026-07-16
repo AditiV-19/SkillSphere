@@ -24,6 +24,10 @@ export const initializeSocket = (server) => {
      * Register user after login
      */
     socket.on("registerUser", (userId) => {
+      if (!userId) {
+    console.warn("Socket connection attempted without a valid userId");
+    return; // Stop execution here so the server doesn't crash!
+  }
       onlineUsers.set(userId.toString(), socket.id);
 
       socket.userId = userId.toString();
