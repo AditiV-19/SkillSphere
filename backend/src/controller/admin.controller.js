@@ -138,8 +138,24 @@ export const verifyFreelancer = async (req, res) => {
 
 export const getPendingGigs = async (req, res) => {
   try {
-    const gigs = await Gig.find({ status: "pending" })
-      .populate("client", "name email")
+    const {approvalStatus, search} = req.query
+    const filter = {}
+    if (approvalStatus) {
+      filter.approvalStatus = approvalStatus;
+    } 
+    if (search) {
+      filter.title = { $regex: search, $options: "i" };
+    }
+
+    const gigs = await Gig.find(filter)
+      .populate({
+        path: "client", 
+        select: "companyName user",
+        populate: {
+          path: "user",
+          select: "email"
+        }
+      })
       .sort({ createdAt: -1 });
 
     res.json({ gigs });
@@ -154,8 +170,11 @@ export const approveGig = async (req, res) => {
     const gig = await Gig.findById(req.params.id);
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    gig.status = "approved";
+    if(gig.approvalStatus === 'approved') return res.status(400).json({message: "Already Approved!"})
+
+    gig.approvalStatus = 'approved';
     gig.approvedAt = new Date();
+    gig.rejectionReason = undefined
     await gig.save();
 
     res.json({ message: "Gig approved", gig });
@@ -171,8 +190,13 @@ export const rejectGig = async (req, res) => {
     const gig = await Gig.findById(req.params.id);
     if (!gig) return res.status(404).json({ message: "Gig not found" });
 
-    gig.status = "rejected";
+    if(gig.approvalStatus === 'rejected') return res.status(400).json({
+      message: "Already Rejected!"
+    })
+
+    gig.approvalStatus = 'rejected';
     gig.rejectionReason = reason || "Did not meet platform guidelines";
+    gig.approvedAt = undefined
     await gig.save();
 
     res.json({ message: "Gig rejected", gig });

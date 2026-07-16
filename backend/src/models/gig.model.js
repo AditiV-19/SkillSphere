@@ -41,6 +41,21 @@ const gigSchema = new Schema(
       index: true,
     },
 
+    approvalStatus: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "pending"
+    },
+
+    approvedAt: {
+      type: Date,
+    },
+
+    rejectionReason: {
+      type: String,
+      default: ""
+    },
+
     budget: {
       budgetType: {
         type: String,

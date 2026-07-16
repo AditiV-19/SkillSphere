@@ -140,6 +140,11 @@ export const sidebarMenus = {
 
   admin: [
     {
+      label: "ClaudeDashboard",
+      icon: FaHome,
+      route: "/admin",
+    },
+    {
       label: "Dashboard",
       icon: FaHome,
       route: "/admin/dashboard",
@@ -166,7 +171,7 @@ export const sidebarMenus = {
     {
       label: "Payments",
       icon: FaRupeeSign,
-      route: "/admin/gig-approvals",
+      route: "/admin/payments",
     },
 
     {

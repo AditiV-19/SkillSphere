@@ -229,8 +229,8 @@ export const verifyFreelancer = (id) => {
   return API.patch(`/admin/users/${id}/verify`);
 }
 
-export const getPendingGigs = () => {
-  return API.get("/admin/gigs/pending");
+export const getPendingGigs = (params) => {
+  return API.get("/admin/gigs/pending", {params});
 }
 export const approveGig = (id) => {
   return API.patch(`/admin/gigs/${id}/approve`);
