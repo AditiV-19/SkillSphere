@@ -25,6 +25,10 @@ import GigWorkTracker from "./pages/freelancer/GigWorkTracker";
 import ActiveContracts from "./pages/client/ActiveContracts";
 import Chat from "./pages/Chat";
 import NotificationsPage from "./pages/NotificationsPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import GigApproval from "./components/admin/GigApproval";
+import AnalyticsOverview from "./components/admin/AnalyticsOverview";
+import UserManagement from "./components/admin/UserManagement";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -220,6 +224,48 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <UserManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/gig-approvals"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <GigApproval />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/analytics"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AnalyticsOverview />
+          </ProtectedRoute>
+        }
+      />
+      {/* <Route
+        path="/admin/payments"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <PaymentMonitoring />
+          </ProtectedRoute>
+        }
+      /> */}
 
     </Routes>
   );

@@ -29,7 +29,8 @@ export const verifyEmail = (token) => {
 };
 
 export const getProfile = (role) => {
-  return API.get(`/profile/${role}`);
+  if(role !== 'admin') return API.get(`/profile/${role}`);
+  else return `admin`
 };
 
 export const updateProfile = (profileData, role) => {
@@ -212,3 +213,39 @@ export const markAllAsRead = () => {
 export const deleteNotification = (id) => {
   return API.delete(`/notifications/${id}`);
 };
+
+
+// Admin Dashboard
+export const getAdminUsers = (params) => {
+  return API.get("/admin/users", { params });
+}
+export const suspendUser = (id, reason) => {
+  return API.patch(`/admin/users/${id}/suspend`, { reason });
+}
+export const unsuspendUser = (id) => {
+  return API.patch(`/admin/users/${id}/unsuspend`);
+}
+export const verifyFreelancer = (id) => {
+  return API.patch(`/admin/users/${id}/verify`);
+}
+
+export const getPendingGigs = () => {
+  return API.get("/admin/gigs/pending");
+}
+export const approveGig = (id) => {
+  return API.patch(`/admin/gigs/${id}/approve`);
+}
+export const rejectGig = (id, reason) => {
+  return API.patch(`/admin/gigs/${id}/reject`, { reason });
+}
+
+// export const getAdminPayments = (params) => {
+//   return API.get("/admin/payments", { params });
+// }
+export const getFraudFlags = () => {
+  return API.get("/admin/payments/fraud-flags");
+}
+
+export const getAnalytics = () => {
+  return API.get("/admin/analytics");
+}

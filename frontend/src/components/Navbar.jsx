@@ -13,7 +13,7 @@ export default function Navbar() {
     const loadProfile = async () => {
       try {
         const res = await getProfile(user.role);
-        setProfile(res.data);
+        setProfile(res.data || res);
       } catch (err) {
         console.log(err);
       }

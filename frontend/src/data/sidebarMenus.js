@@ -14,6 +14,8 @@ import {
   FaEnvelopeOpen,
   FaSpinner,
   FaBell,
+  FaCheck,
+  FaRupeeSign,
 } from "react-icons/fa";
 
 export const sidebarMenus = {
@@ -144,7 +146,7 @@ export const sidebarMenus = {
     },
 
     {
-      label: "Users",
+      label: "Manage Users",
       icon: FaUsers,
       route: "/admin/users",
     },
@@ -153,6 +155,18 @@ export const sidebarMenus = {
       label: "Analytics",
       icon: FaChartBar,
       route: "/admin/analytics",
+    },
+
+    {
+      label: "Gig Approvals",
+      icon: FaCheck,
+      route: "/admin/gig-approvals",
+    },
+
+    {
+      label: "Payments",
+      icon: FaRupeeSign,
+      route: "/admin/gig-approvals",
     },
 
     {
