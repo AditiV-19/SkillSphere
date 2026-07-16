@@ -1,6 +1,6 @@
 import FreelancerProfile from "./freelancer/FreelancerProfile";
 import ClientProfile from "./client/ClientProfile";
-import AdminProfile from "./admin/AdminProfile";
+import AdminProfile from "./admin/AdminDashboard";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 export default function Profile() {
 
@@ -12,8 +12,6 @@ export default function Profile() {
                 <FreelancerProfile />
             ) : user?.role === "client" ? (
                 <ClientProfile />
-            ) : user?.role === "admin" ? (
-                <AdminProfile />
             ) : (
                 <div>Please login</div>
             )
