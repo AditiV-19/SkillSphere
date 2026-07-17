@@ -174,7 +174,7 @@ export default function ViewFreelancerProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const user = JSON.stringify(localStorage.getItem("user"))
+  const user = JSON.parse(localStorage.getItem("user") || "null")
 
   useEffect(() => {
     fetchFreelancerProfile();

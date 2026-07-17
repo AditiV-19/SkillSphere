@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { FreelancerProfile } from "../models/profile.model.js";
 import { calculateProfileCompletion } from "../utils/profileCompletion.js";
 
@@ -154,32 +155,38 @@ export const getAllFreelancers = async (req, res) => {
 export const getFreelancerById = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("here", id);
 
-    // 1. Locate the freelancer document by its ID and pull owner details
-    const freelancer = await FreelancerProfile.findOne({
-      user: id,
-    }).populate("user", "username email createdAt");
-
-    // 2. Fail fast if the profile doesn't exist
-    if (!freelancer) {
-      return res.status(404).json({
+    // 1. Validate early — a malformed ID should never reach a DB query
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
         success: false,
-        message: "The requested freelancer profile index could not be located.",
+        message: "Invalid freelancer ID format.",
       });
     }
 
-    // 3. Flatten properties cleanly for your frontend layouts
+    // 2. Accept either identifier convention:
+    //    - User._id  (what the admin panel currently sends)
+    //    - FreelancerProfile._id  (what search/browse results currently send)
+    // This avoids forcing every caller across the app to agree on one shape.
+    const freelancer = await FreelancerProfile.findOne({
+      $or: [{ user: id }, { _id: id }],
+    }).populate("user", "username email createdAt");
+
+    // 3. Fail fast if the profile doesn't exist
+    if (!freelancer) {
+      return res.status(404).json({
+        success: false,
+        message: "The requested freelancer profile could not be found.",
+      });
+    }
+
+    // 4. Flatten properties cleanly for the frontend
     const profileObj = freelancer.toObject();
     const normalizedProfile = {
       ...profileObj,
-
-      name: `${profileObj.firstName} ${profileObj.lastName}`.trim(),
-
+      name: `${profileObj.firstName || ""} ${profileObj.lastName || ""}`.trim(),
       username: profileObj.user?.username,
-
       email: profileObj.user?.email,
-
       memberSince: profileObj.user?.createdAt
         ? new Date(profileObj.user.createdAt).getFullYear()
         : "Recent",
@@ -192,17 +199,16 @@ export const getFreelancerById = async (req, res) => {
   } catch (error) {
     console.error("Error in getFreelancerById controller:", error);
 
-    // Catch invalid MongoDB format casts safely (e.g. random letters passed as id strings)
     if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
-        message: "Invalid profile ID parameter formatting configuration.",
+        message: "Invalid freelancer ID format.",
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: "Internal server error retrieving developer profile records.",
+      message: "Internal server error retrieving freelancer profile.",
       error: error.message,
     });
   }
