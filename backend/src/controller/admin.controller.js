@@ -350,7 +350,10 @@ export const getFraudFlags = async (req, res) => {
 export const getAnalytics = async (req, res) => {
   try {
     const [platformRevenueAgg] = await Payment.aggregate([
-      { $match: { status: "completed" } },
+      { $match: { 
+        status: {
+          $in: ["held", "released", "paid_out"] 
+        }}},
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]);
 
@@ -360,22 +363,23 @@ export const getAnalytics = async (req, res) => {
     });
 
     const topCategories = await Gig.aggregate([
-      { $match: { status: "approved" } },
+      { $match: { approvalStatus: "approved" } },
       { $group: { _id: "$category", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 },
     ]);
 
-    const totalGigs = await Gig.countDocuments({ status: { $in: ["completed", "cancelled"] } });
-    const completedGigs = await Gig.countDocuments({ status: "completed" });
+    const totalGigs = await Gig.countDocuments({ approvalStatus: "approved", status: { $in: ["completed", "cancelled"] } });
+    const completedGigs = await Gig.countDocuments({ approvalStatus: "approved", status: "completed" });
     const jobSuccessRate = totalGigs > 0 ? ((completedGigs / totalGigs) * 100).toFixed(1) : 0;
+console.log(totalGigs, "vs", completedGigs)
 
     // last 6 months revenue trend
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     const monthlyRevenue = await Payment.aggregate([
-      { $match: { status: "completed", createdAt: { $gte: sixMonthsAgo } } },
+      { $match: { status: {$in : ["held", "released", "paid_out"] }, createdAt: { $gte: sixMonthsAgo } } },
       {
         $group: {
           _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
@@ -385,8 +389,56 @@ export const getAnalytics = async (req, res) => {
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
 
+    //Revenue trend
+
+    const now = new Date();
+
+const currentStart = new Date(now);
+currentStart.setDate(currentStart.getDate() - 30);
+
+const previousStart = new Date(now);
+previousStart.setDate(previousStart.getDate() - 60);
+
+const getRevenue = async (start, end = null) => {
+  const dateFilter = end
+    ? { $gte: start, $lt: end }
+    : { $gte: start };
+
+  const [result] = await Payment.aggregate([
+    {
+      $match: {
+        status: { $in: ["held", "released", "paid_out"] },
+        createdAt: dateFilter,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$amount" },
+      },
+    },
+  ]);
+
+  return result?.total || 0;
+};
+
+const currentRevenue = await getRevenue(currentStart);
+const previousRevenue = await getRevenue(previousStart, currentStart);
+
+let revenueTrend = 0;
+
+if (previousRevenue > 0) {
+  revenueTrend = Number(
+    (((currentRevenue - previousRevenue) / previousRevenue) * 100).toFixed(1)
+  );
+} else if (currentRevenue > 0) {
+  revenueTrend = 100;
+}
+
+
     res.json({
       platformRevenue: platformRevenueAgg?.total || 0,
+      revenueTrend,
       activeFreelancers,
       topCategories: topCategories.map((c) => ({ category: c._id || "Uncategorized", count: c.count })),
       jobSuccessRate: Number(jobSuccessRate),

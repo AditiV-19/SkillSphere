@@ -70,6 +70,14 @@ const gigSchema = new Schema(
       },
     },
 
+    
+    status: {
+      type: String,
+      enum: ["open", "in_progress", "completed", "cancelled"],
+      default: "open",
+      index: true,
+    },
+
     // Milestone tracking arrays [cite: 48, 140]
     milestones: [
       {
@@ -151,13 +159,6 @@ const gigSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
-      index: true,
-    },
-
-    status: {
-      type: String,
-      enum: ["open", "in_progress", "completed", "cancelled"],
-      default: "open",
       index: true,
     },
 
