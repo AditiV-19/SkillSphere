@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
+import { Bell, CheckCheck, Trash2, BellRing, Circle } from "lucide-react";
 
 dayjs.extend(relativeTime);
 
@@ -29,55 +30,53 @@ const NotificationsPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Notifications</h1>
-            {unreadCount > 0 && (
-              <p className="text-sm text-slate-500 mt-1">
-                You have {unreadCount} unread notification
-                {unreadCount > 1 ? "s" : ""}
-              </p>
-            )}
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                <Bell size={20} className="fill-blue-100" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
+            </div>
+            <p className="text-sm font-medium text-slate-500 mt-2">
+              {unreadCount > 0 ? (
+                <span>
+                  You have <strong className="text-blue-600">{unreadCount}</strong> unread notification{unreadCount > 1 ? "s" : ""}
+                </span>
+              ) : (
+                "You are all caught up!"
+              )}
+            </p>
           </div>
 
           {unreadCount > 0 && (
             <button
               onClick={readAllNotifications}
-              className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors px-3 py-1.5 hover:bg-blue-50 rounded-md"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors px-4 py-2 hover:bg-blue-50 rounded-lg border border-transparent hover:border-blue-100 active:scale-95"
             >
+              <CheckCheck size={16} />
               Mark all as read
             </button>
           )}
         </div>
 
-        <div className="bg-white rounded-xl ring-1 ring-slate-900/5 shadow-sm overflow-hidden">
+        {/* Notifications Container */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center p-12">
-              <p className="text-sm text-slate-400">Loading notifications…</p>
+            <div className="flex flex-col items-center justify-center p-16 space-y-4">
+              <div className="w-8 h-8 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="text-sm font-medium text-slate-400">Loading your updates…</p>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="bg-slate-50 p-3 rounded-full mb-3">
-                <svg
-                  className="w-6 h-6 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.5"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  ></path>
-                </svg>
+            <div className="flex flex-col items-center justify-center p-16 text-center">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 ring-8 ring-slate-50/50">
+                <BellRing className="w-8 h-8 text-slate-300" />
               </div>
-              <p className="text-sm font-medium text-slate-600">
-                You're all caught up!
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Check back later for new updates.
+              <h3 className="text-lg font-semibold text-slate-800">No notifications yet</h3>
+              <p className="text-sm text-slate-500 mt-1 max-w-sm">
+                When you get updates about your gigs, payments, or messages, they will show up right here.
               </p>
             </div>
           ) : (
@@ -86,40 +85,45 @@ const NotificationsPage = () => {
                 <div
                   key={notification._id}
                   onClick={() => handleItemClick(notification)}
-                  className={`cursor-pointer p-4 hover:bg-slate-50 transition flex justify-between gap-3 ${
-                    notification.read ? "bg-white" : "bg-blue-50/60"
+                  className={`group relative cursor-pointer p-5 transition-all duration-200 hover:bg-slate-50 flex items-start gap-4 ${
+                    notification.read ? "bg-white" : "bg-blue-50/30"
                   }`}
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {!notification.read && (
-                        <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                      )}
-                      <h4 className="font-semibold text-slate-800 truncate">
-                        {notification.title}
-                      </h4>
-                    </div>
+                  {/* Unread Indicator */}
+                  <div className="pt-1.5 shrink-0">
+                    {notification.read ? (
+                      <Circle size={10} className="text-slate-300/50 fill-slate-200" />
+                    ) : (
+                      <div className="relative">
+                        <div className="w-2.5 h-2.5 bg-blue-500 rounded-full ring-4 ring-blue-100"></div>
+                        <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20"></div>
+                      </div>
+                    )}
+                  </div>
 
-                    <p className="text-sm text-slate-600 mt-1">
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 pr-8">
+                    <h4 className={`text-sm mb-0.5 truncate ${notification.read ? "font-medium text-slate-700" : "font-semibold text-slate-900"}`}>
+                      {notification.title}
+                    </h4>
+                    <p className={`text-sm line-clamp-2 ${notification.read ? "text-slate-500" : "text-slate-600"}`}>
                       {notification.message}
                     </p>
-
-                    <p className="text-xs text-slate-400 mt-2">
-                      {notification.createdAt
-                        ? dayjs(notification.createdAt).fromNow()
-                        : ""}
+                    <p className="text-xs font-medium text-slate-400 mt-2 flex items-center gap-1.5">
+                      {notification.createdAt ? dayjs(notification.createdAt).fromNow() : ""}
                     </p>
                   </div>
 
+                  {/* Delete Button - Subtle until hover */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       removeNotification(notification._id);
                     }}
-                    className="text-red-500 hover:text-red-700 shrink-0 h-fit"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200"
                     aria-label="Delete notification"
                   >
-                    ✕
+                    <Trash2 size={18} />
                   </button>
                 </div>
               ))}

@@ -52,7 +52,7 @@ cron.schedule("* * * * *", async () => {
             type: "MILESTONE",
             title: "Milestone Deadline Reminder",
             message,
-            link: `/gigs/${gig._id}`,
+            link: `/freelancer/tracker/${gig._id}`,
             sendEmail: true,
           });
 
