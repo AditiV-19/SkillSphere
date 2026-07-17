@@ -3,6 +3,8 @@ import { Gig } from "../models/gig.model.js";
 import { ClientProfile } from "../models/profile.model.js";
 import { Proposal } from "../models/proposal.model.js";
 import { sendNotification } from "../services/notification.services.js";
+import { User } from "../models/user.model.js";
+import { Payment } from "../models/payment.model.js";
 // ==========================================
 // 1. CREATE GIG (CONSOLIDATED & CLEANED)
 // ==========================================
@@ -492,14 +494,12 @@ export const inviteFreelancer = async (req, res) => {
     const gig = await Gig.findById(gigId);
 
     if (
-      gig.invitedFreelancers.some(
-        (id) => id.toString() === freelancerUserId
-      )
+      gig.invitedFreelancers.some((id) => id.toString() === freelancerUserId)
     ) {
       return res.status(400).json({
         message: "Freelancer has already been invited.",
       });
-}
+    }
 
     // 2. Atomically verify ownership, status, and add the freelancer
     const updatedGig = await Gig.findOneAndUpdate(
@@ -540,7 +540,7 @@ export const inviteFreelancer = async (req, res) => {
       message: `${clientProfile.companyName} invited you to apply for "${updatedGig.title}".`,
       link: `/freelancer/invitations`,
     });
-    
+
     return res.json({
       message: "Freelancer invited successfully",
       gig: updatedGig,
@@ -740,6 +740,19 @@ export const getGigProgress = async (req, res) => {
       ? Math.round((completed / total) * 100)
       : 0;
 
+    const payments = await Payment.find({ gig: gig._id }).select(
+      "milestone _id status",
+    );
+    const milestonesWithPaymentId = gig.milestones.map((m) => {
+      const relatedPayment = payments.find(
+        (p) => p.milestone.toString() === m._id.toString(),
+      );
+      return {
+        ...m.toObject(),
+        paymentId: relatedPayment?._id,
+      };
+    });
+
     res.json({
       success: true,
       gig: {
@@ -748,7 +761,7 @@ export const getGigProgress = async (req, res) => {
         status: gig.status,
         assignedFreelancer: gig.assignedFreelancer,
         client: gig.client,
-        milestones: gig.milestones,
+        milestones: milestonesWithPaymentId,
         completionPercentage,
       },
     });
@@ -804,12 +817,12 @@ export const updateMilestoneStatus = async (req, res) => {
     const freelancer = await User.findById(req.user.id);
 
     await sendNotification({
-        recipient: gig.client,
-        sender: req.user.id,
-        type: "MILESTONE",
-        title: "Milestone Updated",
-        message: `${freelancer.firstname} updated "${milestone.title}" to ${status}.`,
-        link: `/client/gigs/${gig._id}`,
+      recipient: gig.client,
+      sender: req.user.id,
+      type: "MILESTONE",
+      title: "Milestone Updated",
+      message: `${freelancer.firstname} updated "${milestone.title}" to ${status}.`,
+      link: `/client/gigs/${gig._id}`,
     });
 
     res.json({

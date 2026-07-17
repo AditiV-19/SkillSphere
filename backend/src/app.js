@@ -10,7 +10,12 @@ import reviewRouter from './routes/review.route.js'
 import chatRouter from './routes/chat.route.js'
 import notificationRouter from './routes/notification.route.js'
 import adminRouter from './routes/admin.routes.js'
+import paymentRouter from './routes/payment.route.js'
+
 const app = express() 
+import {handleWebhook} from './controller/payment.controller.js'
+
+app.post("/", express.raw({ type: "application/json" }), handleWebhook);
 
 app.use(cors({
     origin: "http://localhost:5173",
@@ -31,4 +36,7 @@ app.use("/api/v1/chat", chatRouter)
 app.use("/api/v1/notifications", notificationRouter);
 
 app.use("/api/v1/admin", adminRouter);
+
+app.use("/api/v1/payments", paymentRouter);
+
 export default app

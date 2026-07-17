@@ -93,6 +93,12 @@ const gigSchema = new Schema(
           enum: ["pending", "in_progress", "completed"],
           default: "pending",
         },
+        paymentStatus: {
+          type: String,
+          enum: ["unfunded", "funded", "released", "refunded"],
+          default: "unfunded",
+        },
+
         remindersSent: {
           sevenDays: {
             type: Boolean,
