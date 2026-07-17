@@ -215,6 +215,28 @@ export const deleteNotification = (id) => {
 };
 
 
+// Payment
+
+export const createPaymentOrder = (gigId, milestoneId) =>{
+  return API.post("/payments/create-order", { gigId, milestoneId });
+}
+export const verifyPayment = (data) => {
+  return API.post("/payments/verify", data);
+}
+export const releaseMilestone = (paymentId) =>{
+  return API.patch(`/payments/${paymentId}/release`);
+}
+export const refundPayment = (paymentId, reason) =>{
+  return API.patch(`/payments/${paymentId}/refund`, { reason });
+}
+export const getMyTransactions = (params) =>{
+  return API.get("/payments/my-transactions", { params });
+}
+export const getGigPayments = (gigId) => {
+  return API.get(`/payments/gig/${gigId}`);
+}
+
+
 // Admin Dashboard
 export const getAdminUsers = (params) => {
   return API.get("/admin/users", { params });

@@ -20,12 +20,20 @@ import {
   MessageSquare,
   Send,
   X,
+  CheckCircle2,
 } from "lucide-react";
 
 const statusStyles = {
   completed: { dot: "bg-emerald-600", label: "bg-emerald-50 text-emerald-700" },
   in_progress: { dot: "bg-blue-600", label: "bg-blue-50 text-blue-700" },
   pending: { dot: "bg-slate-300", label: "bg-slate-100 text-slate-500" },
+};
+
+const paymentStatusStyles = {
+  unfunded: "bg-slate-100 text-slate-500",
+  funded: "bg-amber-100 text-amber-700",
+  released: "bg-blue-100 text-blue-700",
+  refunded: "bg-rose-100 text-rose-700",
 };
 
 const getDeadlineBadge = (dueDate, status) => {
@@ -45,18 +53,21 @@ const getDeadlineBadge = (dueDate, status) => {
   if (diffDays < 0) {
     return {
       text: `Overdue by ${Math.abs(diffDays)}d`,
-      className: "bg-rose-50 text-rose-700 border-rose-100",
+      className: "bg-rose-100 text-rose-700 border-rose-500",
     };
   }
   if (diffDays <= 3) {
     return {
       text: diffDays === 0 ? "Due today" : `Due in ${diffDays}d`,
-      className: "bg-amber-50 text-amber-700 border-amber-100",
+      className:
+        diffDays <= 1
+          ? "bg-rose-50 text-rose-700 border-rose-200"
+          : "bg-amber-100 text-amber-700 border-amber-200",
     };
   }
   return {
     text: `Due ${due.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-    className: "bg-slate-100 text-slate-500 border-slate-200",
+    className: "bg-amber-50 text-amber-700 border-amber-100",
   };
 };
 
@@ -108,55 +119,55 @@ function ProgressLogComposer({ gigId, onPosted, hasReviewed }) {
 
   return (
     <>
-    {!hasReviewed && (
-    <form onSubmit={handleSubmit} className="mb-6 space-y-2">
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Post a progress update for the client..."
-        rows={3}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      />
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={(e) => setFile(e.target.files[0] || null)}
-            className="hidden"
+      {!hasReviewed && (
+        <form onSubmit={handleSubmit} className="mb-6 space-y-2">
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Post a progress update for the client..."
+            rows={3}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current.click()}
-            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-blue-600 px-2 py-1 rounded-lg border border-slate-200"
-          >
-            <Paperclip className="w-3.5 h-3.5" />
-            {file ? file.name : "Attach file"}
-          </button>
-          {file && (
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={(e) => setFile(e.target.files[0] || null)}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+                className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-blue-600 px-2 py-1 rounded-lg border border-slate-200"
+              >
+                <Paperclip className="w-3.5 h-3.5" />
+                {file ? file.name : "Attach file"}
+              </button>
+              {file && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  className="ml-1.5 text-slate-400 hover:text-rose-500 align-middle"
+                >
+                  <X className="w-3.5 h-3.5 inline" />
+                </button>
+              )}
+            </div>
             <button
-              type="button"
-              onClick={() => {
-                setFile(null);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-              }}
-              className="ml-1.5 text-slate-400 hover:text-rose-500 align-middle"
+              type="submit"
+              disabled={posting || !message.trim()}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
             >
-              <X className="w-3.5 h-3.5 inline" />
+              <Send className="w-3.5 h-3.5" />
+              {posting ? "Posting..." : "Post Update"}
             </button>
-          )}
-        </div>
-        <button
-          type="submit"
-          disabled={posting || !message.trim()}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
-        >
-          <Send className="w-3.5 h-3.5" />
-          {posting ? "Posting..." : "Post Update"}
-        </button>
-      </div>
-    </form>
-    )}
+          </div>
+        </form>
+      )}
     </>
   );
 }
@@ -201,6 +212,8 @@ function ProgressLogFeed({ logs }) {
 function MilestoneStatusControl({ gigId, milestone, onUpdated, hasReviewed }) {
   const [updating, setUpdating] = useState(false);
 
+  const isLocked = hasReviewed || milestone.paymentStatus === "released";
+
   const handleChange = async (e) => {
     const newStatus = e.target.value;
     try {
@@ -216,17 +229,22 @@ function MilestoneStatusControl({ gigId, milestone, onUpdated, hasReviewed }) {
 
   return (
     <>
-      {!hasReviewed && (
+      {!isLocked ? (
         <select
           value={milestone.status}
           onChange={handleChange}
           disabled={updating}
-          className="text-xs font-semibold rounded-lg border border-slate-300 px-2 py-1 disabled:opacity-50"
+          className="text-xs font-semibold rounded-lg border border-blue-300 px-2 py-1 bg-blue-500 disabled:opacity-50 text-white"
         >
           <option value="pending">Pending</option>
           <option value="in_progress">In Progress</option>
           <option value="completed">Completed</option>
         </select>
+      ) : (
+        <div className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+          <CheckCircle2 size={16} className="text-emerald-500" />
+          <span>Paid</span>
+        </div>
       )}
     </>
   );
@@ -388,6 +406,12 @@ export default function GigWorkTracker() {
                         >
                           {m.status.replace("_", " ")}
                         </span>
+                        <span
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${paymentStatusStyles[m.paymentStatus]}`}
+                        >
+                          {m.paymentStatus}
+                        </span>
+
                         {badge && (
                           <span
                             className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.className}`}

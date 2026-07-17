@@ -29,6 +29,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import GigApproval from "./components/admin/GigApproval";
 import AnalyticsOverview from "./components/admin/AnalyticsOverview";
 import UserManagement from "./components/admin/UserManagement";
+import TransactionHistory from "./pages/TransactionHistory";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -266,6 +267,8 @@ export default function App() {
           </ProtectedRoute>
         }
       /> */}
+
+      <Route path="/transactions" element={<TransactionHistory />} />
 
     </Routes>
   );

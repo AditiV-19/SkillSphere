@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-// Added updateMilestoneDeadline (or replace with your generic updateGig route)
 import { getGigProgress, getGigReviewStatus, getProgressLogs, updateMilestoneDeadline } from "../../services/api";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import SectionCard from "../../components/profile/SectionCard";
+import MilestoneList from "../../components/payments/MilestoneList";
 
 import {
   ChevronLeft,
@@ -21,43 +21,6 @@ import {
 } from "lucide-react";
 import SubmitReviewForm from "../../components/SubmitReviewForm";
 
-const statusStyles = {
-  completed: { dot: "bg-emerald-600", label: "bg-emerald-50 text-emerald-700" },
-  in_progress: { dot: "bg-blue-600", label: "bg-blue-50 text-blue-700" },
-  pending: { dot: "bg-slate-300", label: "bg-slate-100 text-slate-500" },
-};
-
-const getDeadlineBadge = (dueDate, status) => {
-  if (status === "completed") return null;
-
-  if (!dueDate) {
-    return {
-      text: "No deadline set",
-      className: "bg-slate-50 text-slate-400 border-slate-200",
-    };
-  }
-
-  const due = new Date(dueDate);
-  const now = new Date();
-  const diffDays = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) {
-    return {
-      text: `Overdue by ${Math.abs(diffDays)}d`,
-      className: "bg-rose-50 text-rose-700 border-rose-100",
-    };
-  }
-  if (diffDays <= 3) {
-    return {
-      text: diffDays === 0 ? "Due today" : `Due in ${diffDays}d`,
-      className: "bg-amber-50 text-amber-700 border-amber-100",
-    };
-  }
-  return {
-    text: `Due ${due.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-    className: "bg-slate-100 text-slate-500 border-slate-200",
-  };
-};
 
 const formatLogDate = (date) =>
   new Date(date).toLocaleDateString("en-US", {
@@ -253,113 +216,21 @@ export default function GigProgress() {
         </div>
 
         {/* Milestone timeline */}
-        <SectionCard title="Milestones">
-          {gig.milestones?.length ? (
-            <ul className="relative border-l border-blue-200 ml-2 space-y-6">
-              {gig.milestones.map((m) => {
-                const style = statusStyles[m.status] || statusStyles.pending;
-                const badge = getDeadlineBadge(m.dueDate, m.status);
-                const isEditing = editingMilestoneId === m._id;
-                const isWorking = updatingId === m._id;
-
-                return (
-                  <li key={m._id} className="relative pl-6">
-                    {/* Fixed absolute left layout bug for timeline line alignment */}
-                    <span
-                      className={`absolute left-[6.5px] top-1.5 w-3 h-3 rounded-full ring-4 ring-white ${style.dot}`}
-                    />
-                    
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div className="space-y-1 flex-1 min-w-60">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-slate-900">{m.title}</h3>
-                          <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${style.label}`}
-                          >
-                            {m.status.replace("_", " ")}
-                          </span>
-                          
-                          {!isEditing && badge && (
-                            <span
-                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge.className}`}
-                            >
-                              {badge.text}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {m.description && (
-                          <p className="text-sm text-slate-600">{m.description}</p>
-                        )}
-                        
-                        {/* Interactive or static Date block */}
-                        {isEditing ? (
-                          <div className="flex items-center gap-2 mt-2 bg-slate-50 p-2 rounded-xl border border-slate-200 max-w-xs">
-                            <input
-                              type="date"
-                              value={selectedDate}
-                              onChange={(e) => setSelectedDate(e.target.value)}
-                              disabled={isWorking}
-                              className="bg-transparent text-sm text-slate-800 outline-none w-full cursor-pointer"
-                            />
-                            <button
-                              onClick={() => handleSaveDeadline(m._id)}
-                              disabled={isWorking}
-                              className="text-emerald-600 hover:text-emerald-700 p-1 hover:bg-emerald-50 rounded transition"
-                              title="Save deadline"
-                            >
-                              {isWorking ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                            </button>
-                            <button
-                              onClick={() => setEditingMilestoneId(null)}
-                              disabled={isWorking}
-                              className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded transition"
-                              title="Cancel"
-                            >
-                              <X size={15} />
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                            <span className="font-medium text-slate-600">₹{m.amount}</span>
-                            {m.dueDate ? (
-                              <>
-                                <span>·</span>
-                                <span>due {new Date(m.dueDate).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}</span>
-                              </>
-                            ) : (
-                              <>
-                                <span>·</span>
-                                <span className="italic text-slate-400">No date set</span>
-                              </>
-                            )}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Timeline Actions: Edit date controls accessible to client */}
-                      {m.status !== "completed" && !isEditing && (
-                        <button
-                          onClick={() => handleStartEdit(m)}
-                          className="text-xs font-medium text-slate-400 hover:text-blue-600 flex items-center gap-1 py-1 px-2 hover:bg-slate-50 rounded-lg transition shrink-0"
-                        >
-                          <Calendar size={14} />
-                          <span>{m.dueDate ? "Change date" : "Set deadline"}</span>
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-sm text-slate-400">No milestones defined for this gig yet.</p>
-          )}
-        </SectionCard>
+          <SectionCard title="Milestones">
+            <MilestoneList
+              gig={gig}
+              gigId={gigId}
+              isClient={true}
+              onUpdate={fetchProgress}
+              editingMilestoneId={editingMilestoneId}
+              selectedDate={selectedDate}
+              updatingId={updatingId}
+              setSelectedDate={setSelectedDate}
+              setEditingMilestoneId={setEditingMilestoneId}
+              handleStartEdit={handleStartEdit}
+              handleSaveDeadline={handleSaveDeadline}
+            />
+          </SectionCard>
 
         {/* Progress log feed — read-only for the client */}
         <div className="mt-6">
