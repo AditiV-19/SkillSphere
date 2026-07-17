@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAdminUsers, suspendUser, unsuspendUser, verifyFreelancer } from "../../services/api";
-import DashboardLayout from "../dashboard/DashboardLayout";
+import DashboardLayout from "../../components/dashboard/DashboardLayout";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);

@@ -25,10 +25,10 @@ import GigWorkTracker from "./pages/freelancer/GigWorkTracker";
 import ActiveContracts from "./pages/client/ActiveContracts";
 import Chat from "./pages/Chat";
 import NotificationsPage from "./pages/NotificationsPage";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import GigApproval from "./components/admin/GigApproval";
-import AnalyticsOverview from "./components/admin/AnalyticsOverview";
-import UserManagement from "./components/admin/UserManagement";
+import GigApproval from "./pages/admin/GigApproval";
+import AnalyticsOverview from "./pages/admin/AnalyticsOverview";
+import UserManagement from "./pages/admin/UserManagement";
+import PaymentMonitoring from "./pages/admin/PaymentMonitoring";
 import TransactionHistory from "./pages/TransactionHistory";
 
 export default function App() {
@@ -227,14 +227,6 @@ export default function App() {
       />
 
       <Route
-        path="/admin"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/admin/users"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
@@ -259,14 +251,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
+      <Route
         path="/admin/payments"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <PaymentMonitoring />
           </ProtectedRoute>
         }
-      /> */}
+      />
 
       <Route path="/transactions" element={<TransactionHistory />} />
 

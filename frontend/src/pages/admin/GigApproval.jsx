@@ -12,7 +12,7 @@ import {
   Filter  // Added
 } from "lucide-react";
 import { getPendingGigs, approveGig, rejectGig } from "../../services/api";
-import DashboardLayout from "../dashboard/DashboardLayout";
+import DashboardLayout from "../../components/dashboard/DashboardLayout";
 
 const GigApproval = () => {
   const [gigs, setGigs] = useState([]);
