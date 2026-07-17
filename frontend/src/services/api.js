@@ -271,3 +271,6 @@ export const getFraudFlags = () => {
 export const getAnalytics = () => {
   return API.get("/admin/analytics");
 }
+export const getAdminFreelancerById = (id) => {
+  return API.get(`/admin/freelancer/${id}`);
+};

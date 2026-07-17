@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
+  getAdminFreelancerById,
   getFreelancerById,
   getGigs,
   inviteFreelancerToGig,
@@ -173,6 +174,7 @@ export default function ViewFreelancerProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const user = JSON.stringify(localStorage.getItem("user"))
 
   useEffect(() => {
     fetchFreelancerProfile();
@@ -182,7 +184,7 @@ export default function ViewFreelancerProfile() {
     try {
       setLoading(true);
       setError("");
-      const response = await getFreelancerById(id);
+      const response = user.role === 'client' ? await getFreelancerById(id) : await getAdminFreelancerById(id);
 
       // Assumes extraction shape from the controller: res.data.freelancer
       setProfile(response.data?.freelancer || response.data);
@@ -259,13 +261,16 @@ export default function ViewFreelancerProfile() {
             <span>Back to Talents</span>
           </button>
 
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors"
-          >
-            <Send size={14} />
-            Send Invitation
-          </button>
+          {user.role === 'client' && (
+            <button
+                  onClick={() => setShowInviteModal(true)}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors"
+                >
+                  <Send size={14} />
+                  Send Invitation
+                </button>
+          )}
+          
         </div>
 
         {/* Dynamic Read-Only Header */}
@@ -528,7 +533,8 @@ export default function ViewFreelancerProfile() {
                         </div>
 
                         {/* Status and Action */}
-                        {slot.isBooked ? (
+                        {user.role === 'client' && (
+                           slot.isBooked ? (
                           <span className="bg-red-100 text-red-500 text-s font-bold px-3 py-1 rounded-full border-red-300 border-2">
                             Booked
                           </span>
@@ -539,7 +545,9 @@ export default function ViewFreelancerProfile() {
                           >
                             Book Now
                           </button>
+                        )
                         )}
+                        
                       </div>
                     );
                   })}

@@ -315,22 +315,23 @@ export const getAllPayments = async (req, res) => {
 export const getFraudFlags = async (req, res) => {
   try {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+console.log(since);
 
     const suspiciousPaymentVolume = await Payment.aggregate([
-      { $match: { createdAt: { $gte: since }, status: "completed" } },
+      { $match: { createdAt: { $gte: since }, status: { $in: ["held", "released", "paid_out"]} } },
       { $group: { _id: "$freelancer", count: { $sum: 1 }, total: { $sum: "$amount" } } },
-      { $match: { count: { $gte: 5 } } },
+      { $match: { count: { $gte: 1 } } },
       { $sort: { total: -1 } },
     ]);
 
     const flaggedUsers = await User.find({ _id: { $in: suspiciousPaymentVolume.map((f) => f._id) } })
-      .select("name email role");
+      .select("username email role");
 
     const flags = suspiciousPaymentVolume.map((f) => {
       const user = flaggedUsers.find((u) => u._id.equals(f._id));
       return {
         userId: f._id,
-        name: user?.name,
+        username: user?.username,
         email: user?.email,
         paymentCount24h: f.count,
         totalAmount24h: f.total,

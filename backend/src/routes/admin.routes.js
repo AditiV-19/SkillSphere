@@ -15,6 +15,7 @@ import {
   getAnalytics,
   getAllPayments,
 } from "../controller/admin.controller.js";
+import { getFreelancerById } from "../controller/freelancerProfile.controller.js";
 
 const router = express.Router();
 
@@ -37,5 +38,8 @@ router.get("/payments/fraud-flags", getFraudFlags);
 
 // Analytics
 router.get("/analytics", getAnalytics);
+
+//  Investigating fraud
+router.get("/freelancer/:id", authMiddleware, adminOnly, getFreelancerById);
 
 export default router

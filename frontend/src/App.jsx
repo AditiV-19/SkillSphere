@@ -25,11 +25,12 @@ import GigWorkTracker from "./pages/freelancer/GigWorkTracker";
 import ActiveContracts from "./pages/client/ActiveContracts";
 import Chat from "./pages/Chat";
 import NotificationsPage from "./pages/NotificationsPage";
+import TransactionHistory from "./pages/TransactionHistory";
 import GigApproval from "./pages/admin/GigApproval";
 import AnalyticsOverview from "./pages/admin/AnalyticsOverview";
 import UserManagement from "./pages/admin/UserManagement";
 import PaymentMonitoring from "./pages/admin/PaymentMonitoring";
-import TransactionHistory from "./pages/TransactionHistory";
+import FraudDetection from "./pages/admin/FraudDetection";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -259,6 +260,24 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+       <Route
+        path="/admin/fraud-flags"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <FraudDetection />
+          </ProtectedRoute>
+        }
+      />
+
+         <Route
+        path="/admin/freelancer/:id"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ViewFreelancerProfile />
+          </ProtectedRoute>
+        }
+      />
+
 
       <Route path="/transactions" element={<TransactionHistory />} />
 

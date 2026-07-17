@@ -154,12 +154,12 @@ export const getAllFreelancers = async (req, res) => {
 export const getFreelancerById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("here", id);
 
     // 1. Locate the freelancer document by its ID and pull owner details
-    const freelancer = await FreelancerProfile.findById(id).populate(
-      "user",
-      "name username email createdAt",
-    );
+    const freelancer = await FreelancerProfile.findOne({
+      user: id,
+    }).populate("user", "username email createdAt");
 
     // 2. Fail fast if the profile doesn't exist
     if (!freelancer) {
@@ -173,11 +173,13 @@ export const getFreelancerById = async (req, res) => {
     const profileObj = freelancer.toObject();
     const normalizedProfile = {
       ...profileObj,
-      name:
-        profileObj.user?.name || profileObj.name || "Independent Professional",
-      username:
-        profileObj.user?.username || profileObj.username || "professional",
-      email: profileObj.user?.email || "",
+
+      name: `${profileObj.firstName} ${profileObj.lastName}`.trim(),
+
+      username: profileObj.user?.username,
+
+      email: profileObj.user?.email,
+
       memberSince: profileObj.user?.createdAt
         ? new Date(profileObj.user.createdAt).getFullYear()
         : "Recent",
@@ -218,7 +220,7 @@ export const searchFreelancers = async (req, res) => {
       availability,
       sort,
       page = 1,
-      
+
       limit = 10,
     } = req.query;
 

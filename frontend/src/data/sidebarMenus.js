@@ -183,9 +183,9 @@ export const sidebarMenus = {
     },
 
     {
-      label: "Reports",
+      label: "Fraud",
       icon: FaFlag,
-      route: "/admin/reports",
+      route: "/admin/fraud-flags",
     },
 
     {
