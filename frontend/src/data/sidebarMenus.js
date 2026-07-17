@@ -16,6 +16,7 @@ import {
   FaBell,
   FaCheck,
   FaRupeeSign,
+  FaMoneyCheck,
 } from "react-icons/fa";
 
 export const sidebarMenus = {
@@ -68,6 +69,12 @@ export const sidebarMenus = {
       route: "/notifications",
     },
 
+     {
+      label: "Transaction History",
+      icon: FaMoneyCheck,
+      route: "/transactions",
+    },
+    
     {
       label: "Settings",
       icon: FaCog,
@@ -129,6 +136,12 @@ export const sidebarMenus = {
       label: "Notifications",
       icon: FaBell,
       route: "/notifications",
+    },
+
+    {
+      label: "Transaction History",
+      icon: FaMoneyCheck,
+      route: "/transactions",
     },
 
     {

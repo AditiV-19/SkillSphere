@@ -3,7 +3,7 @@ import razorpayInstance from "../config/razorpay.js";
 import { Payment } from "../models/payment.model.js";
 import { Gig } from "../models/gig.model.js";
 import { sendNotification } from "../services/notification.services.js";
-import { ClientProfile } from "../models/profile.model.js";
+import { ClientProfile, FreelancerProfile } from "../models/profile.model.js";
 
 // ---------- 1. CREATE ORDER (client initiates payment for a milestone) ----------
 
@@ -130,7 +130,7 @@ export const verifyPayment = async (req, res) => {
       type: "PAYMENT",
       title: "Milestone Funded",
       message: `"${milestone.title}" has been funded (₹${payment.amount}) and is now in escrow.`,
-      link: `/freelancer/gigs/${gig._id}`,
+      link: `/freelancer/tracker/${gig._id}`,
     });
 
     res.json({ message: "Payment verified and held in escrow", payment });
@@ -223,7 +223,7 @@ export const triggerPayout = async (payment, gig, milestone) => {
       type: "PAYMENT",
       title: "Payment Received",
       message: `₹${payment.amount} for "${milestone.title}" has been paid out to you.`,
-      link: `/freelancer/gigs/${gig._id}`,
+      link: `/freelancer/tracker/${gig._id}`,
     });
 
     console.log(
@@ -241,7 +241,6 @@ export const refundPayment = async (req, res) => {
     const { paymentId } = req.params;
     const { reason } = req.body;
 
-    console.log("payment id i got: ", paymentId);
     const payment = await Payment.findById(paymentId);
     if (!payment) return res.status(404).json({ message: "Payment not found" });
 
@@ -259,7 +258,6 @@ export const refundPayment = async (req, res) => {
         message: `Only payments still in escrow can be refunded. Current status: '${payment.status}'`,
       });
     }
-    console.log("hehe 1");
 
     const refund = await razorpayInstance.payments.refund(
       payment.razorpayPaymentId,
@@ -268,13 +266,13 @@ export const refundPayment = async (req, res) => {
         notes: { reason: reason || "Client requested refund" },
       },
     );
-    console.log("hehe 2");
+
     payment.status = "refunded";
     payment.refundId = refund.id;
     payment.refundReason = reason || "Client requested refund";
     payment.refundedAt = new Date();
     await payment.save();
-    console.log("hehe 3");
+
     const gig = await Gig.findById(payment.gig);
     const milestone = gig.milestones.id(payment.milestone);
     milestone.paymentStatus = "refunded"; // reopen milestone for re-funding later
@@ -286,7 +284,7 @@ export const refundPayment = async (req, res) => {
       type: "PAYMENT",
       title: "Payment Refunded",
       message: `The escrow payment for "${milestone.title}" was refunded to the client.`,
-      link: `/freelancer/gigs/${gig._id}`,
+      link: `/freelancer/tracker/${gig._id}`,
     });
 
     res.json({ message: "Payment refunded", payment, milestone });
@@ -305,27 +303,101 @@ export const getMyTransactions = async (req, res) => {
     const filter = {
       $or: [{ client: req.user.id }, { freelancer: req.user.id }],
     };
-    if (status) filter.status = status;
+
+    if (status) {
+      filter.status = status;
+    }
 
     const payments = await Payment.find(filter)
       .populate("gig", "title")
-      .populate("client", "companyName email")
-      .populate("freelancer", "firstName lastName email")
+      .populate("client", "username email role")
+      .populate("freelancer", "username email role")
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
+      .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
 
     const total = await Payment.countDocuments(filter);
 
-    res.json({
-      payments,
+    // Collect unique user ids
+    const clientIds = [
+      ...new Set(payments.map((p) => p.client?._id.toString())),
+    ];
+
+    const freelancerIds = [
+      ...new Set(payments.map((p) => p.freelancer?._id.toString())),
+    ];
+
+    // Fetch profiles
+    const clientProfiles = await ClientProfile.find({
+      user: { $in: clientIds },
+    }).lean();
+
+    const freelancerProfiles = await FreelancerProfile.find({
+      user: { $in: freelancerIds },
+    }).lean();
+
+    // Create lookup maps
+    const clientMap = new Map(
+      clientProfiles.map((profile) => [
+        profile.user.toString(),
+        profile,
+      ])
+    );
+
+    const freelancerMap = new Map(
+      freelancerProfiles.map((profile) => [
+        profile.user.toString(),
+        profile,
+      ])
+    );
+
+    // Merge profile data
+    const formattedPayments = payments.map((payment) => {
+      const paymentObj = payment.toObject();
+
+      const clientProfile = clientMap.get(
+        payment.client._id.toString()
+      );
+
+      const freelancerProfile = freelancerMap.get(
+        payment.freelancer._id.toString()
+      );
+
+      return {
+        ...paymentObj,
+
+        client: {
+          _id: payment.client._id,
+          username: payment.client.username,
+          email: payment.client.email,
+          role: payment.client.role,
+          companyName: clientProfile?.companyName || null,
+          companyLogo: clientProfile?.companyLogo || "",
+        },
+
+        freelancer: {
+          _id: payment.freelancer._id,
+          username: payment.freelancer.username,
+          email: payment.freelancer.email,
+          role: payment.freelancer.role,
+          firstName: freelancerProfile?.firstName || "",
+          lastName: freelancerProfile?.lastName || "",
+          profilePicture: freelancerProfile?.profilePicture || "",
+        },
+      };
+    });
+
+    res.status(200).json({
+      payments: formattedPayments,
       total,
       page: Number(page),
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / Number(limit)),
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to fetch transactions" });
+    res.status(500).json({
+      message: "Failed to fetch transactions",
+    });
   }
 };
 
