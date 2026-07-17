@@ -13,6 +13,7 @@ import {
 //   getAllPayments,
   getFraudFlags,
   getAnalytics,
+  getAllPayments,
 } from "../controller/admin.controller.js";
 
 const router = express.Router();
@@ -31,7 +32,7 @@ router.patch("/gigs/:id/approve", approveGig);
 router.patch("/gigs/:id/reject", rejectGig);
 
 // Payments
-// router.get("/payments", getAllPayments);
+router.get("/payments", getAllPayments);
 router.get("/payments/fraud-flags", getFraudFlags);
 
 // Analytics

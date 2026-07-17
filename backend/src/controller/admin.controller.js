@@ -1,6 +1,7 @@
 import { User } from '../models/user.model.js'
 import {Gig} from "../models/gig.model.js";
 import { ClientProfile, FreelancerProfile } from '../models/profile.model.js';
+import { Payment } from '../models/payment.model.js'
 
 // ---------- USERS ----------
 
@@ -208,29 +209,105 @@ export const rejectGig = async (req, res) => {
 
 // ---------- PAYMENTS ----------
 
-// export const getAllPayments = async (req, res) => {
-//   try {
-//     const { status, page = 1, limit = 20 } = req.query;
+export const getAllPayments = async (req, res) => {
+  try {
+    const { status, page = 1, limit = 20 } = req.query;
 
-//     const filter = {};
-//     if (status) filter.status = status;
+    const filter = {};
+    if (status) filter.status = status;
 
-//     const payments = await Payment.find(filter)
-//       .populate("client", "name email")
-//       .populate("freelancer", "name email")
-//       .populate("gig", "title")
-//       .sort({ createdAt: -1 })
-//       .skip((page - 1) * limit)
-//       .limit(Number(limit));
+    const payments = await Payment.find(filter)
+      .populate("gig", "title")
+      .populate("client", "username email role")
+      .populate("freelancer", "username email role")
+      .sort({ createdAt: -1 })
+      .skip((Number(page) - 1) * Number(limit))
+      .limit(Number(limit));
 
-//     const total = await Payment.countDocuments(filter);
+    const total = await Payment.countDocuments(filter);
 
-//     res.json({ payments, total, page: Number(page), pages: Math.ceil(total / limit) });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Failed to fetch payments" });
-//   }
-// };
+    // Collect unique user ids
+    const clientIds = [
+      ...new Set(payments.map((p) => p.client?._id.toString())),
+    ];
+
+    const freelancerIds = [
+      ...new Set(payments.map((p) => p.freelancer?._id.toString())),
+    ];
+
+    // Fetch all profiles
+    const clientProfiles = await ClientProfile.find({
+      user: { $in: clientIds },
+    }).lean();
+
+    const freelancerProfiles = await FreelancerProfile.find({
+      user: { $in: freelancerIds },
+    }).lean();
+
+    // Create lookup maps
+    const clientMap = new Map(
+      clientProfiles.map((profile) => [
+        profile.user.toString(),
+        profile,
+      ])
+    );
+
+    const freelancerMap = new Map(
+      freelancerProfiles.map((profile) => [
+        profile.user.toString(),
+        profile,
+      ])
+    );
+
+    // Merge profile data
+    const formattedPayments = payments.map((payment) => {
+      const paymentObj = payment.toObject();
+
+      const clientProfile = clientMap.get(
+        payment.client._id.toString()
+      );
+
+      const freelancerProfile = freelancerMap.get(
+        payment.freelancer._id.toString()
+      );
+
+      return {
+        ...paymentObj,
+
+        client: {
+          _id: payment.client._id,
+          username: payment.client.username,
+          email: payment.client.email,
+          role: payment.client.role,
+          companyName: clientProfile?.companyName || null,
+          companyLogo: clientProfile?.companyLogo || "",
+        },
+
+        freelancer: {
+          _id: payment.freelancer._id,
+          username: payment.freelancer.username,
+          email: payment.freelancer.email,
+          role: payment.freelancer.role,
+          firstName: freelancerProfile?.firstName || "",
+          lastName: freelancerProfile?.lastName || "",
+          profilePicture: freelancerProfile?.profilePicture || "",
+        },
+      };
+    });
+
+    res.status(200).json({
+      payments: formattedPayments,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / Number(limit)),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Failed to fetch payments",
+    });
+  }
+};
 
 // Simple fraud heuristic: flag freelancers with unusually high volume of
 // payments in a short window, or accounts with a spike in 5-star reviews

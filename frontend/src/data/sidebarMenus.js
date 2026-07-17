@@ -153,11 +153,6 @@ export const sidebarMenus = {
 
   admin: [
     {
-      label: "ClaudeDashboard",
-      icon: FaHome,
-      route: "/admin",
-    },
-    {
       label: "Dashboard",
       icon: FaHome,
       route: "/admin/dashboard",

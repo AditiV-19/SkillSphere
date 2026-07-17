@@ -261,9 +261,9 @@ export const rejectGig = (id, reason) => {
   return API.patch(`/admin/gigs/${id}/reject`, { reason });
 }
 
-// export const getAdminPayments = (params) => {
-//   return API.get("/admin/payments", { params });
-// }
+export const getAdminPayments = (params) => {
+  return API.get("/admin/payments", { params });
+}
 export const getFraudFlags = () => {
   return API.get("/admin/payments/fraud-flags");
 }
