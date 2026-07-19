@@ -78,8 +78,6 @@ const MilestoneList = ({
       setActionLoading(null);
     }
   };
-    console.log(gig.milestones);
-
 
   if (!gig.milestones?.length) {
     return <p className="text-sm text-slate-400">No milestones defined for this gig yet.</p>;

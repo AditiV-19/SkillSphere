@@ -740,9 +740,10 @@ export const getGigProgress = async (req, res) => {
       ? Math.round((completed / total) * 100)
       : 0;
 
-    const payments = await Payment.find({ gig: gig._id }).select(
-      "milestone _id status",
-    );
+    const payments = await Payment.find({ gig: gig._id })
+    .select("milestone _id status")
+    .sort({createdAt: -1})
+    
     const milestonesWithPaymentId = gig.milestones.map((m) => {
       const relatedPayment = payments.find(
         (p) => p.milestone.toString() === m._id.toString(),
