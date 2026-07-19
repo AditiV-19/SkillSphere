@@ -209,7 +209,7 @@ export const getGigReviewStatus = async (req, res) => {
 export const getReviewAnalytics = async (req, res) => {
   try {
     const { userId } = req.params;
-
+console.log(userId)
     const reviews = await Review.find({
       reviewee: userId,
     })

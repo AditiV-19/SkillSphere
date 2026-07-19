@@ -25,6 +25,7 @@ import {
   Save,
 } from "lucide-react";
 import ReviewAnalytics from "../../components/ReviewAnalytics.jsx";
+import FreelancerScheduleManager from "./FreelancerScheduleManager.jsx";
 
 const formatDate = (date) => {
   if (!date) return "Present";
@@ -306,63 +307,8 @@ export default function FreelancerProfile() {
               </div>
             </SectionCard>
 
-            <SectionCard icon={Calendar} title="Book Slots">
-              {profile.availability.slots?.length > 0 ? (
-                <div className="space-y-2">
-                  {profile.availability.slots.map((slot, index) => {
-                    const startDate = new Date(slot.startTime);
-                    const endDate = new Date(slot.endTime);
-
-                    const start = new Date(slot.startTime).toLocaleTimeString(
-                      [],
-                      { hour: "2-digit", minute: "2-digit" },
-                    );
-                    const end = new Date(slot.endTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200"
-                      >
-                        {/* Time Display */}
-
-                        <div className="font-semibold text-slate-700 leading-normal">
-                          <p>
-                            {startDate.toLocaleDateString("en-IN", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}{" "}
-                            -{" "}
-                            {endDate.toLocaleDateString("en-IN", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}{" "}
-                          </p>
-                          <p className="text-[10px] text-slate-400 font-normal mt-0.5">
-                            {start} - {end}
-                          </p>
-                        </div>
-                        {slot.isBooked ? (
-                          <span className="bg-green-100 text-green-500 text-s font-bold px-3 py-1 rounded-full border-green-300 border-2">
-                            Booked
-                          </span>
-                        ) : (
-                          <span className="bg-slate-200 text-slate-500 text-s font-bold px-3 py-1 rounded-full">
-                            Your Slot
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-400">No slots available.</p>
-              )}
-            </SectionCard>
+            <FreelancerScheduleManager />
+            
           </div>
         </div>
         <ReviewAnalytics 

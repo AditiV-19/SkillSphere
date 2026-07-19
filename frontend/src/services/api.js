@@ -274,3 +274,23 @@ export const getAnalytics = () => {
 export const getAdminFreelancerById = (id) => {
   return API.get(`/admin/freelancer/${id}`);
 };
+
+
+// Availability(Booking system)
+
+export const addAvailabilitySlots = (slots) =>{
+  return API.post("/availability/slots", { slots });
+}
+export const getMySchedule = () =>{
+  return API.get("/availability/my-schedule");
+}
+export const cancelMySlot = (slotId) =>{
+  return API.patch(`/availability/my-schedule/slots/${slotId}/cancel`);
+}
+
+export const bookFreelancerSlot = (freelancerUserId, slotId) =>{
+  return API.post(`/availability/${freelancerUserId}/slots/${slotId}/book`);
+}
+export const cancelBooking = (freelancerUserId, slotId) =>{
+  return API.patch(`/availability/${freelancerUserId}/slots/${slotId}/cancel`);
+}

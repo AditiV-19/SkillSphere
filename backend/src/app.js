@@ -11,6 +11,7 @@ import chatRouter from './routes/chat.route.js'
 import notificationRouter from './routes/notification.route.js'
 import adminRouter from './routes/admin.routes.js'
 import paymentRouter from './routes/payment.route.js'
+import availabilityRouter from './routes/availability.route.js'
 
 const app = express() 
 import {handleWebhook} from './controller/payment.controller.js'
@@ -38,5 +39,7 @@ app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/admin", adminRouter);
 
 app.use("/api/v1/payments", paymentRouter);
+
+app.use("/api/v1/availability", availabilityRouter)
 
 export default app

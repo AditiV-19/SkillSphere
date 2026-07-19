@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { FreelancerProfile } from "../models/profile.model.js";
+import { ClientProfile, FreelancerProfile } from "../models/profile.model.js";
 import { calculateProfileCompletion } from "../utils/profileCompletion.js";
 
 // Create Profile
@@ -156,7 +156,6 @@ export const getFreelancerById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1. Validate early — a malformed ID should never reach a DB query
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -164,15 +163,10 @@ export const getFreelancerById = async (req, res) => {
       });
     }
 
-    // 2. Accept either identifier convention:
-    //    - User._id  (what the admin panel currently sends)
-    //    - FreelancerProfile._id  (what search/browse results currently send)
-    // This avoids forcing every caller across the app to agree on one shape.
     const freelancer = await FreelancerProfile.findOne({
       $or: [{ user: id }, { _id: id }],
     }).populate("user", "username email createdAt");
 
-    // 3. Fail fast if the profile doesn't exist
     if (!freelancer) {
       return res.status(404).json({
         success: false,
@@ -182,6 +176,19 @@ export const getFreelancerById = async (req, res) => {
 
     // 4. Flatten properties cleanly for the frontend
     const profileObj = freelancer.toObject();
+
+    if (req.user?.role === "client") {
+      const requestingClientProfile = await ClientProfile.findOne({ user: req.user.id }).select("_id");
+      if (requestingClientProfile && profileObj.availability?.slots?.length) {
+        profileObj.availability.slots = profileObj.availability.slots.map((slot) => ({
+          ...slot,
+          bookedByMe:
+            slot.isBooked &&
+            slot.bookedBy?.toString() === requestingClientProfile._id.toString(),
+        }));
+      }
+    }
+
     const normalizedProfile = {
       ...profileObj,
       name: `${profileObj.firstName || ""} ${profileObj.lastName || ""}`.trim(),

@@ -80,7 +80,11 @@ const freelancerSchema = new Schema(
           startTime: { type: Date, required: true },
           endTime: { type: Date, required: true },
           isBooked: { type: Boolean, default: false },
-          bookedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Link to client
+          bookedBy: { 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: "ClientProfile", 
+            default: null 
+          }, 
         },
       ],
     },

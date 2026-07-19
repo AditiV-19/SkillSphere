@@ -4,6 +4,7 @@ import {
   getAdminFreelancerById,
   getFreelancerById,
   getGigs,
+  getReviewAnalytics,
   inviteFreelancerToGig,
 } from "../../services/api.js";
 
@@ -27,6 +28,8 @@ import {
   X,
   Check,
 } from "lucide-react";
+import BookableSlots from "../../components/payments/BookableSlots.jsx";
+import ReviewAnalytics from "../../components/ReviewAnalytics.jsx";
 
 const formatDate = (date) => {
   if (!date) return "Present";
@@ -171,6 +174,7 @@ export default function ViewFreelancerProfile() {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -186,8 +190,20 @@ export default function ViewFreelancerProfile() {
       setError("");
       const response = user.role === 'client' ? await getFreelancerById(id) : await getAdminFreelancerById(id);
 
-      // Assumes extraction shape from the controller: res.data.freelancer
-      setProfile(response.data?.freelancer || response.data);
+      const freelancerProfile = response.data?.freelancer || response.data;
+    setProfile(freelancerProfile);
+
+    const userId = freelancerProfile.user?._id || freelancerProfile.user;
+    if (userId) {
+      try {
+        const analyticsResponse = await getReviewAnalytics(userId);
+        setAnalytics(analyticsResponse.data.analytics);
+      } catch (analyticsErr) {
+        // Don't fail the whole page if analytics alone can't be fetched —
+        // it's a supplementary panel, not core profile data
+        console.error("Failed to load review analytics:", analyticsErr);
+      }
+    }
     } catch (err) {
       console.error(err);
       setError(
@@ -196,18 +212,6 @@ export default function ViewFreelancerProfile() {
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleBooking = async (slot) => {
-    try {
-      // Slot dynamic hook connection
-      // await bookFreelancerSlot(id, { slotId: slot._id });
-      alert("Consultation slot locked and booked successfully!");
-      fetchFreelancerProfile(); // Synchronize view state updates over network
-    } catch (error) {
-      console.error("Booking verification breakdown:", error);
-      alert("Could not process booking parameters. Slot may be closed.");
     }
   };
 
@@ -493,74 +497,21 @@ export default function ViewFreelancerProfile() {
             </SectionCard>
 
             {/* Live Consultation Booking Sub-Card */}
-            <SectionCard icon={Calendar} title="Schedule Consultation">
-              {profile.availability?.slots?.length > 0 ? (
-                <div className="space-y-3">
-                  {profile.availability.slots.map((slot, index) => {
-                    const startDate = new Date(slot.startTime);
-                    const endDate = new Date(slot.endTime);
-                    const start = startDate.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
-                    const end = endDate.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
-
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs transition hover:bg-slate-100/50"
-                      >
-                        <div className="font-semibold text-slate-700 leading-normal">
-                          <p>
-                            {startDate.toLocaleDateString("en-IN", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}{" "}
-                          -{" "}
-                          {endDate.toLocaleDateString("en-IN", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}{" "}
-                          </p>
-                          <p className="text-[10px] text-slate-400 font-normal mt-0.5">
-                            {start} - {end}
-                          </p>
-                        </div>
-
-                        {/* Status and Action */}
-                        {user.role === 'client' && (
-                           slot.isBooked ? (
-                          <span className="bg-red-100 text-red-500 text-s font-bold px-3 py-1 rounded-full border-red-300 border-2">
-                            Booked
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleBooking(slot)}
-                            className="bg-green-600 hover:bg-green-700 text-white text-s font-bold px-3 py-1 rounded-full *:transition-colors"
-                          >
-                            Book Now
-                          </button>
-                        )
-                        )}
-                        
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-400 font-medium italic">
-                  No interactive consultation slots provided at this interval.
-                </p>
-              )}
-            </SectionCard>
+           <SectionCard icon={Calendar} title="Schedule Consultation">
+            {user.role === 'client' && (
+              <BookableSlots
+                freelancerUserId={freelancerUserId}
+                slots={profile.availability?.slots || []}
+                onBooked={fetchFreelancerProfile}
+                onCancelled={fetchFreelancerProfile}
+              />
+            )}
+          </SectionCard>
           </div>
+          
         </div>
       </div>
+      <ReviewAnalytics analytics={analytics} />
 
       {showInviteModal && (
         <InviteToGigModal
