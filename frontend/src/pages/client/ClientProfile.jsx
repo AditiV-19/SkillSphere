@@ -103,6 +103,7 @@ export default function ClientProfile() {
           setIsEditing={setIsEditing}
           profile={profile}
           isShow={true}
+          isProfileCompletion={true}
         />
 
         {/* content grid */}

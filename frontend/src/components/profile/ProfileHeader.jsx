@@ -3,7 +3,7 @@ import { FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
 import React, { useState } from "react";
 import { MapPin, Phone } from "lucide-react";
 
-export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow}) {
+export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow, isProfileCompletion}) {
 
   const user = localStorage.getItem('user')? JSON.parse(localStorage.getItem("user"))
   : null;
@@ -140,7 +140,8 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow
       </div>
 
       {/* Completion Bar */}
-      <div className="mt-8 pt-6 border-t border-slate-100">
+      {isProfileCompletion &&
+        <div className="mt-8 pt-6 border-t border-slate-100">
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="font-medium text-slate-700">Profile completion</span>
           <span className="font-bold text-blue-700">
@@ -154,6 +155,8 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow
           />
         </div>
       </div>
+      }
+      
     </div>
   );
 }

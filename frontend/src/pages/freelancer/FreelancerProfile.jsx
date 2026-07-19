@@ -90,6 +90,7 @@ export default function FreelancerProfile() {
           setIsEditing={setIsEditing}
           profile={profile}
           isShow={true}
+          isProfileCompletion={true}
         />
         {/* content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">

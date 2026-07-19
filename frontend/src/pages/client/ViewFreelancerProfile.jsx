@@ -283,6 +283,7 @@ export default function ViewFreelancerProfile() {
           setIsEditing={() => {}} // Disabled editing triggers safely
           profile={profile}
           isShow={false}
+          isProfileCompletion={false}
         />
 
         {/* Core Profile Parameters Content Grid */}
@@ -510,9 +511,11 @@ export default function ViewFreelancerProfile() {
           </div>
           
         </div>
+        <div className="mt-8">
+        <ReviewAnalytics analytics={analytics} />
+        </div>
       </div>
-      <ReviewAnalytics analytics={analytics} />
-
+      
       {showInviteModal && (
         <InviteToGigModal
           freelancerUserId={freelancerUserId}
