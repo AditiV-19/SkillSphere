@@ -24,6 +24,10 @@ export const loginUser = (userData) => {
   return API.post("/login", userData);
 };
 
+export const googleLogin = (payload) => {
+  return API.post("/google", payload)
+}
+
 export const verifyEmail = (token) => {
   return API.get(`/verify-email/${token}`);
 };

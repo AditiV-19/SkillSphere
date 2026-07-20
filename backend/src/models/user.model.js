@@ -15,7 +15,10 @@ const userSchema = new Schema(
 
         password: {
             type: String,
-            required: true,
+        },
+
+        googleId: {
+            type: String,
         },
 
         email: {
@@ -57,6 +60,24 @@ const userSchema = new Schema(
         verificationTokenExpires: {
             type: Date
         },
+
+        // --- Password Reset ---
+        resetPasswordToken: {
+            type: String,
+            default: ""
+        },
+        resetPasswordExpires: {
+            type: Date
+        },
+
+        // --- Two-Factor Authentication (2FA) ---
+        isTwoFactorEnabled: {
+            type: Boolean,
+            default: false
+        },
+        twoFactorSecret: {
+            type: String, 
+        }
     },
     {
         timestamps: true

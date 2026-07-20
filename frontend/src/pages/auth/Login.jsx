@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { loginUser } from "../../services/api";
+import { loginUser, googleLogin } from "../../services/api";
+import { GoogleLogin } from '@react-oauth/google';
 import socket from "../../services/socket";
+
 export default function Login() {
   const navigate = useNavigate();
 
@@ -11,9 +13,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // --- Standard Email Login ---
   const handleLogin = async (e) => {
     e.preventDefault();
-
     setLoading(true);
 
     try {
@@ -24,36 +26,72 @@ export default function Login() {
       const user = response.data.user;
 
       localStorage.setItem("token", response.data.token);
-
       localStorage.setItem("user", JSON.stringify(user));
 
       // Connect socket after successful login
       if (!socket.connected) {
         socket.connect();
       }
-
       // Register logged-in user with socket server
       socket.emit("registerUser", user._id);
 
       setEmail("");
       setPassword("");
 
-      alert(response.data.message);
+      alert(response.data.message || "Login successful!");
 
       switch (user.role) {
         case "admin":
           navigate("/admin/dashboard");
           break;
-
         case "client":
           navigate("/client/dashboard");
           break;
-
         default:
           navigate("/freelancer/dashboard");
       }
     } catch (error) {
       alert(error.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Google OAuth Login ---
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const response = await googleLogin({
+        credential: credentialResponse.credential,
+      });
+
+      const user = response.data.user;
+
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Connect socket after successful Google login
+      if (!socket.connected) {
+        socket.connect();
+      }
+      socket.emit("registerUser", user._id);
+
+      switch (user.role) {
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        case "client":
+          navigate("/client/dashboard");
+          break;
+        default:
+          navigate("/freelancer/dashboard");
+      }
+    } catch (error) {
+      if (error.response?.status === 400 && error.response?.data?.message.includes("role")) {
+         alert("Account not found. Please go to the Registration page to create an account and select your role.");
+      } else {
+         alert(error.response?.data?.message || "Google Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -144,6 +182,21 @@ export default function Login() {
               {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
+
+          {/* Google Auth Divider & Button */}
+          <div className="mt-6 flex items-center justify-center space-x-2">
+            <span className="h-px w-full bg-gray-300"></span>
+            <span className="text-sm text-gray-500">OR</span>
+            <span className="h-px w-full bg-gray-300"></span>
+          </div>
+          
+          <div className="mt-6 flex justify-center">
+             <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => alert('Google Login Failed')}
+                text="signin_with"
+             />
+          </div>
 
           {/* Footer */}
           <p className="mt-6 text-center text-sm text-gray-500">

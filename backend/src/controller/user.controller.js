@@ -1,8 +1,9 @@
 import {User} from '../models/user.model.js'
 import jwt from 'jsonwebtoken'
+import { OAuth2Client } from "google-auth-library";
 import { sendVerificationEmail } from '../services/email.services.js';
 import crypto from 'crypto'
-import { FreelancerProfile } from '../models/profile.model.js';
+import { ClientProfile, FreelancerProfile } from '../models/profile.model.js';
 
 
 // Register
@@ -43,9 +44,13 @@ export const registerUser = async(req, res) =>{
         });
 
         // Create empty profile
-        await FreelancerProfile.create({
-            user: user._id
-        });
+        if (role === 'freelancer') {
+            await FreelancerProfile.create({ user: user._id });
+            console.log("Freelancer profile created");
+        } else if (role === 'client') {
+            await ClientProfile.create({ user: user._id, companyName: username }); 
+            console.log("Client profile created");
+        }
 
         // Send verification email
         await(sendVerificationEmail(user.email, verificationToken))
@@ -107,6 +112,67 @@ export const loginUser = async(req, res) => {
         res.status(500).json({message: 'Internal Server Error', error: error.message})
     }
 }
+
+// Google OAuth
+
+export const googleLogin = async (req, res) => {
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  const { credential, role } = req.body; 
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { email, name: username, sub: googleId } = ticket.getPayload();
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      if (!role || !["client", "freelancer"].includes(role.toLowerCase())) {
+        return res
+          .status(400)
+          .json({ message: "Valid role (client/freelancer) is required for new users." });
+      }
+
+      user = new User({
+        username,
+        email,
+        googleId,
+        role: role.toLowerCase(), 
+        isVerified: true, 
+      });
+      await user.save();
+
+      if (user.role === 'freelancer') {
+          await FreelancerProfile.create({ user: user._id });
+      } else if (user.role === 'client') {
+          await ClientProfile.create({ user: user._id, companyName: username }); 
+      }
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role }, 
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    res.status(200).json({
+        message: "Google login successful",
+        token,
+        user: { 
+            id: user._id, 
+            username: user.username, 
+            role: user.role, 
+            email: user.email 
+        },
+    });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid Google Token", error: error.message });
+  }
+};
+
 
 
 // Logout
