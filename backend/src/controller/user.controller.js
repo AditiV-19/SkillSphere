@@ -1,7 +1,7 @@
 import {User} from '../models/user.model.js'
 import jwt from 'jsonwebtoken'
 import { OAuth2Client } from "google-auth-library";
-import { sendVerificationEmail } from '../services/email.services.js';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.services.js';
 import crypto from 'crypto'
 import { ClientProfile, FreelancerProfile } from '../models/profile.model.js';
 
@@ -221,3 +221,76 @@ export const verifyEmail = async (req, res) => {
         });
     }
 }
+
+// ==========================================
+// 1. FORGOT PASSWORD (Generate Token & Email)
+// ==========================================
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(404).json({ message: "User with this email does not exist." });
+        }
+
+        // Generate a random reset token
+        const resetToken = crypto.randomBytes(32).toString("hex");
+
+        // Hash it before saving to the database for security
+        const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+        // Set token and expiration (e.g., 15 minutes from now)
+        user.resetPasswordToken = hashedToken;
+        const expireTime = new Date(Date.now() + 15 * 60 * 1000);
+        user.resetPasswordExpires = expireTime;
+
+        await user.save();
+
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+        
+        await sendPasswordResetEmail(user.email, resetUrl);
+
+        res.status(200).json({ message: "Password reset link sent to your email." });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+// ==========================================
+// 2. RESET PASSWORD (Verify Token & Save New Password)
+// ==========================================
+export const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { newPassword } = req.body;
+
+        // Hash the token from the URL so we can compare it to the database
+        const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+        // Find user with matching token that hasn't expired yet
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: "Token is invalid or has expired." });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters." });
+        }
+
+        // Update password and clear the reset token fields
+        user.password = newPassword; // The pre('save') hook will hash this automatically!
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        await user.save();
+
+        res.status(200).json({ message: "Password successfully reset. You can now log in." });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};

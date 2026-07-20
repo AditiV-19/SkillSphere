@@ -68,3 +68,28 @@ export const sendNotificationEmail = async ({ to, title, message }) => {
     console.log(err);
   }
 };
+
+
+export const sendPasswordResetEmail = async (email, resetUrl) => {
+    try {
+        await transporter.sendMail({
+            from: `"SkillSphere" <${process.env.EMAIL}>`,
+            to: email,
+            subject: 'SkillSphere - Password Reset Request',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-w-md: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #1f2937;">Password Reset Request</h2>
+                    <p style="color: #4b5563;">You recently requested to reset your password for your SkillSphere account. Click the button below to choose a new password:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
+                    </div>
+                    <p style="color: #6b7280; font-size: 14px;">If you did not request this, please ignore this email. This link will expire in 15 minutes.</p>
+                </div>
+            `,
+        });
+        console.log("Password reset email sent to:", email);
+    } catch (error) {
+        console.error("Error sending password reset email:", error);
+        throw new Error("Failed to send email");
+    }
+};

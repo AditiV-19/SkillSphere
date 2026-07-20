@@ -32,6 +32,14 @@ export const verifyEmail = (token) => {
   return API.get(`/verify-email/${token}`);
 };
 
+export const forgotPassword = (data) => {
+  return API.post("/forgot-password", data);
+};
+
+export const resetPassword = (token, data) => {
+  return API.post(`/reset-password/${token}`, data);
+};
+
 export const getProfile = (role) => {
   if(role !== 'admin') return API.get(`/profile/${role}`);
   else return `admin`

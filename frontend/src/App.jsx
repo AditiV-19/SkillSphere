@@ -31,6 +31,8 @@ import AnalyticsOverview from "./pages/admin/AnalyticsOverview";
 import UserManagement from "./pages/admin/UserManagement";
 import PaymentMonitoring from "./pages/admin/PaymentMonitoring";
 import FraudDetection from "./pages/admin/FraudDetection";
+import ResetPassword from "./pages/auth/ResetPassowrd";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -41,6 +43,9 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/verify-email/:token" element={<VerifyEmail />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+
 
       <Route
         path="/dashboard"

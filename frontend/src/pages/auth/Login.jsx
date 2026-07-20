@@ -171,6 +171,18 @@ export default function Login() {
                   )}
                 </button>
               </div>
+              
+              {/* --- ADDED FORGOT PASSWORD LINK --- */}
+              <div className="flex justify-end mt-2">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-600 font-medium hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              {/* ---------------------------------- */}
+              
             </div>
 
             {/* Submit */}
