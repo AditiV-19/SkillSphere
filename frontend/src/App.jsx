@@ -34,6 +34,7 @@ import FraudDetection from "./pages/admin/FraudDetection";
 import ResetPassword from "./pages/auth/ResetPassowrd";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import VerificationReview from "./pages/admin/VerificationReview";
+import ViewClientProfile from "./pages/ViewClientProfile";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -280,6 +281,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ViewFreelancerProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/client/:id"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ViewClientProfile />
           </ProtectedRoute>
         }
       />

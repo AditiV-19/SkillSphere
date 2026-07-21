@@ -126,3 +126,40 @@ export const deleteProfile = async (req, res) => {
 
   }
 };
+
+export const getClientById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const client = await ClientProfile.findOne({
+      $or: [{ _id: id }, { user: id }]
+    }).populate("user", "-password"); 
+
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: "Client profile not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      client,
+    });
+    
+  } catch (error) {
+    console.error("Error fetching client by ID:", error);
+    
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid ID format",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};

@@ -10,12 +10,12 @@ import {
   getPendingGigs,
   approveGig,
   rejectGig,
-//   getAllPayments,
   getFraudFlags,
   getAnalytics,
   getAllPayments,
 } from "../controller/admin.controller.js";
 import { getFreelancerById } from "../controller/freelancerProfile.controller.js";
+import { getClientById } from "../controller/clientProfile.controller.js";
 
 const router = express.Router();
 
@@ -41,5 +41,6 @@ router.get("/analytics", getAnalytics);
 
 //  Investigating fraud
 router.get("/freelancer/:id", authMiddleware, adminOnly, getFreelancerById);
+router.get("/client/:id", authMiddleware, adminOnly, getClientById);
 
 export default router

@@ -32,27 +32,31 @@ export const getAllUsers = async (req, res) => {
     const usersWithProfiles = await Promise.all(
       users.map(async (user) => {
         let profileName = null;
+        let profileId = null;
         
         if (user.role === "freelancer") {
           const profile = await FreelancerProfile.findOne({ user: user._id })
-            .select("firstName lastName")
+            .select("firstName lastName _id")
             .lean();
             
           if (profile) {
             profileName = `${profile.firstName} ${profile.lastName}`;
+            profileId = profile._id;
           }
         } else if (user.role === "client") {
           const profile = await ClientProfile.findOne({ user: user._id })
-            .select("companyName")
+            .select("companyName _id")
             .lean();
 
           if (profile) {
             profileName = `${profile.companyName}`;
+            profileId = profile._id;
           }
         } 
         return {
           ...user,
-          name: profileName || user.username
+          name: profileName || user.username,
+          profileId
         };
       })
     );

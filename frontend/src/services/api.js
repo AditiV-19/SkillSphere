@@ -286,7 +286,9 @@ export const getAnalytics = () => {
 export const getAdminFreelancerById = (id) => {
   return API.get(`/admin/freelancer/${id}`);
 };
-
+export const getClientProfile = (id) => {
+  return API.get(`/admin/client/${id}`);
+}
 
 // Availability(Booking system)
 export const addAvailabilitySlots = (slots) =>{
