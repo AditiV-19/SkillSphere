@@ -51,7 +51,7 @@ export const getConversations = async (req, res) => {
     const conversations = await Conversation.find({
       participants: userId,
     })
-      .populate("participants", "firstName email profilePicture")
+      .populate("participants", "username email role")
       .sort({ updatedAt: -1 });
 
     const conversationsWithUnread = await Promise.all(

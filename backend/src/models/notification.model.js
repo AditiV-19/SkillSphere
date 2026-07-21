@@ -17,6 +17,7 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       enum: [
         "MESSAGE",
+        "CALL",
         "INVITATION",
         "PROPOSAL",
         "GIG_ACCEPTED",
