@@ -39,7 +39,6 @@ export default function Dashboards() {
 
     fetchDashboardData();
   }, [role]);
-console.log(dashboardData)
   return (
     <DashboardLayout>
       <HeroBanner />
