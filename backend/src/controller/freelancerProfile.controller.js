@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { ClientProfile, FreelancerProfile } from "../models/profile.model.js";
 import { calculateProfileCompletion } from "../utils/profileCompletion.js";
+import { sendNotification } from "../services/notification.services.js";
 
 // Create Profile
 
@@ -353,4 +354,282 @@ export const searchFreelancers = async (req, res) => {
       message: "Failed to search freelancers.",
     });
   }
+};
+
+/*
+==================================================
+Submit Verification Request (Updated for Single-Step)
+==================================================
+*/
+export const submitVerificationRequest = async (req, res) => {
+    try {
+        const freelancer = await FreelancerProfile.findOne({
+            user: req.user.id
+        });
+
+        if (!freelancer) {
+            return res.status(404).json({
+                success: false,
+                message: "Freelancer profile not found"
+            });
+        }
+
+        if (freelancer.verification.status === "pending") {
+            return res.status(400).json({
+                success: false,
+                message: "Verification request already submitted."
+            });
+        }
+
+        if (freelancer.verification.status === "verified") {
+            return res.status(400).json({
+                success: false,
+                message: "You are already verified."
+            });
+        }
+
+        // 👇 FIX: Check for req.file instead of req.body.url
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Verification document is required"
+            });
+        }
+
+        // 👇 FIX: Extract the Cloudinary URL directly from Multer
+        const url = req.file.path; 
+        
+        // Multer parses the other form fields into req.body automatically
+        const documentType = req.body.documentType || "ID"; 
+
+        // Push the new document into the array
+        freelancer.verification.documents.push({
+            url,
+            documentType,
+            uploadedAt: new Date()
+        });
+
+        freelancer.verification.status = "pending";
+        freelancer.verification.submittedAt = new Date();
+        freelancer.verification.rejectionReason = "";
+
+        await freelancer.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Verification request submitted successfully.",
+            verification: freelancer.verification
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+/*
+==================================================
+Get My Verification Status
+==================================================
+*/
+
+export const getMyVerificationStatus = async (req, res) => {
+
+    try {
+
+        const freelancer = await FreelancerProfile.findOne({
+            user: req.user.id
+        });
+
+        if (!freelancer) {
+            return res.status(404).json({
+                success: false,
+                message: "Freelancer not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            verification: freelancer.verification,
+            isVerified: freelancer.isVerified
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+
+};
+
+
+
+/*
+==================================================
+Admin Pending Requests
+==================================================
+*/
+
+export const getPendingVerifications = async (req, res) => {
+
+    try {
+
+        const freelancers = await FreelancerProfile.find({
+            "verification.status": "pending"
+        })
+            .populate(
+                "user",
+                "username email"
+            )
+            .sort({
+                "verification.submittedAt": 1
+            });
+
+        return res.status(200).json({
+            success: true,
+            count: freelancers.length,
+            freelancers
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+
+};
+
+
+
+/*
+==================================================
+Approve Verification
+==================================================
+*/
+export const approveVerification = async (req, res) => {
+    try {
+        const badgeAwarded = req.body.badgeType || "Identity Verified";
+        const freelancer = await FreelancerProfile.findById(req.params.id);
+
+        if (!freelancer) {
+            return res.status(404).json({
+                success: false,
+                message: "Freelancer not found"
+            });
+        }
+        freelancer.verification.status = "verified";
+        freelancer.verification.verifiedAt = new Date();
+        freelancer.verification.verifiedBy = req.user.id;
+
+        // Add the badge only if they don't already have it
+        if (!freelancer.verification.badges.includes(badgeAwarded)) {
+            freelancer.verification.badges.push(badgeAwarded);
+        }
+
+        // Your .pre("save") hook will automatically flip freelancer.isVerified to true here
+        await freelancer.save();
+
+       await sendNotification({
+        recipient: freelancer.user,
+        sender: req.user.id,
+        type: "VERIFICATION",
+        title: "Verification Approved",
+        message: `Congratulations! Your account has been verified with the ${badgeAwarded} badge.`,
+        link: "/freelancer/profile",
+      });
+
+        return res.status(200).json({
+            success: true,
+            message: "Freelancer verified successfully."
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+/*
+==================================================
+Reject Verification
+==================================================
+*/
+
+export const rejectVerification = async (req, res) => {
+
+    try {
+
+        const { reason } = req.body;
+
+        const freelancer = await FreelancerProfile.findById(req.params.id);
+
+        if (!freelancer) {
+            return res.status(404).json({
+                success: false,
+                message: "Freelancer not found"
+            });
+        }
+
+        freelancer.verification.status = "rejected";
+
+        freelancer.verification.rejectionReason =
+            reason || "Verification rejected.";
+
+        freelancer.verification.verifiedBy = null;
+
+        freelancer.verification.verifiedAt = null;
+
+        freelancer.isVerified = false;
+
+        await freelancer.save();
+
+       await sendNotification({
+        recipient: freelancer.user,
+        sender: req.user.id,
+        type: "VERIFICATION",
+        title: "Verification Rejected",
+        message: reason || "Your verification request has been rejected.",
+        link: "/freelancer/profile",
+      });
+
+        return res.status(200).json({
+
+            success: true,
+
+            message: "Verification rejected."
+
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: error.message
+
+        });
+
+    }
+
 };

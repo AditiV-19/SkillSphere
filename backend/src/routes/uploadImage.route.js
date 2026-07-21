@@ -1,6 +1,8 @@
 import { Router } from "express";
 
 import { upload } from "../middleware/uploadImage.js";
+import { submitVerificationRequest } from "../controller/freelancerProfile.controller.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
@@ -62,6 +64,8 @@ router.post("/chatFile", upload.single("file"), async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 });
+
+router.post("/verification", authMiddleware, upload.single("file"), submitVerificationRequest);
 
 // Catches errors thrown by multer/CloudinaryStorage before the route handler runs
 router.use((err, req, res, next) => {

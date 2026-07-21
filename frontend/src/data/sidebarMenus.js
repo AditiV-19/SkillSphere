@@ -14,9 +14,10 @@ import {
   FaEnvelopeOpen,
   FaSpinner,
   FaBell,
-  FaCheck,
   FaRupeeSign,
   FaMoneyCheck,
+  FaRegCheckCircle,
+  FaIdBadge,
 } from "react-icons/fa";
 
 export const sidebarMenus = {
@@ -172,8 +173,14 @@ export const sidebarMenus = {
 
     {
       label: "Gig Approvals",
-      icon: FaCheck,
+      icon: FaRegCheckCircle,
       route: "/admin/gig-approvals",
+    },
+
+    {
+      label: "Verify Freelancer",
+      icon: FaIdBadge,
+      route: "/admin/verify-freelancer",
     },
 
     {

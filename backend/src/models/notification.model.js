@@ -25,7 +25,8 @@ const notificationSchema = new mongoose.Schema(
         "MILESTONE",
         "PAYMENT",
         "SYSTEM",
-        "BOOKING"
+        "BOOKING",
+        "VERIFICATION"
       ],
       required: true,
     },

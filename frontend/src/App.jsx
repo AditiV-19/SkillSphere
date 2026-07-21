@@ -33,6 +33,7 @@ import PaymentMonitoring from "./pages/admin/PaymentMonitoring";
 import FraudDetection from "./pages/admin/FraudDetection";
 import ResetPassword from "./pages/auth/ResetPassowrd";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import VerificationReview from "./pages/admin/VerificationReview";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -274,11 +275,20 @@ export default function App() {
         }
       />
 
-         <Route
+      <Route
         path="/admin/freelancer/:id"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ViewFreelancerProfile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/verify-freelancer"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <VerificationReview />
           </ProtectedRoute>
         }
       />

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { getProfile, getReviewAnalytics, updateProfile } from "../../services/api.js";
+import { getProfile, getReviewAnalytics, updateProfile, handleIdUpload } from "../../services/api.js";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import SectionCard from "../../components/profile/SectionCard";
 import EditProfileModal from "./EditProfileModal";
+import VerificationBadgeList from "./VerificationBadge";
 
 import { FaBriefcase, FaGithub, FaLinkedin } from "react-icons/fa";
 import {
@@ -23,6 +24,7 @@ import {
   Sparkles,
   Camera,
   Save,
+  ShieldCheck,
 } from "lucide-react";
 import ReviewAnalytics from "../../components/ReviewAnalytics.jsx";
 import FreelancerScheduleManager from "./FreelancerScheduleManager.jsx";
@@ -36,26 +38,11 @@ const formatDate = (date) => {
 
 export default function FreelancerProfile() {
   const [isEditing, setIsEditing] = useState(false);
-
   const [profile, setProfile] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [analytics, setAnalytics] = useState(null);
+  const [uploadingId, setUploadingId] = useState(false);
 
-  const handleSubmit = async (formData) => {
-    try {
-      const response = await updateProfile(formData, profile.user?.role);
-
-      console.log("UPDATED PROFILE:", response.data);
-
-      setProfile(response.data);
-
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to save:", error.response?.data || error.message);
-    }
-  };
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -63,14 +50,11 @@ export default function FreelancerProfile() {
   const fetchProfile = async () => {
     try {
       const response = await getProfile("freelancer");
-
       setProfile(response.data);
 
       const userId = response.data.user?._id;
-
       if (userId) {
         const analyticsResponse = await getReviewAnalytics(userId);
-
         setAnalytics(analyticsResponse.data.analytics);
       }
     } catch (error) {
@@ -79,9 +63,42 @@ export default function FreelancerProfile() {
       setLoading(false);
     }
   };
+
+  const handleSubmit = async (formData) => {
+    try {
+      const response = await updateProfile(formData, profile.user?.role);
+      console.log("UPDATED PROFILE:", response.data);
+      setProfile(response.data);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to save:", error.response?.data || error.message);
+    }
+  };
+
+  const handleUploadIdDocument = async (file) => {
+    setUploadingId(true);
+    try {
+      const response = await handleIdUpload(file);
+      
+      if (response.success) {
+        await fetchProfile(); 
+      }
+    } catch (error) {
+      console.error("Failed to upload ID:", error);
+      alert("Upload failed: " + error.message);
+    } finally {
+      setUploadingId(false);
+    }
+  };
+
   if (loading) {
     return <div className="p-10">Loading...</div>;
   }
+
+  // profile.isVerified is kept in sync server-side (see the freelancer
+  // schema's pre-save hook) whenever verification.status === "verified".
+  const isFullyVerified = !!profile.isVerified;
+
   return (
     <>
       <div className="space-y-8">
@@ -91,6 +108,7 @@ export default function FreelancerProfile() {
           profile={profile}
           isShow={true}
           isProfileCompletion={true}
+          isVerified={isFullyVerified}
         />
         {/* content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -176,9 +194,8 @@ export default function FreelancerProfile() {
                   {profile.certifications.map((cert, i) => (
                     <li
                       key={i}
-                      className="flex gap-4"
-                      className={`relative pl-6 ${
-                        i !== profile.education.length - 1 ? "pb-8" : ""
+                      className={`relative pl-6 flex gap-4 ${
+                        i !== profile.certifications.length - 1 ? "pb-8" : ""
                       }`}
                     >
                       <span className="absolute -left-1.75 top-1 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-white" />
@@ -189,7 +206,7 @@ export default function FreelancerProfile() {
                         )}
                       </div>
                       <div className="pb-1">
-                        <p className="text-s text-slate-400 mt-1">
+                        <p className="text-xs text-slate-400 mt-1">
                           {formatDate(cert.issueDate)}
                         </p>
                         <h3 className="font-semibold text-slate-900">
@@ -200,7 +217,7 @@ export default function FreelancerProfile() {
                         </p>
 
                         {cert.certificateUrl && (
-                          <p className="text-sm text-slate-600 mt-1.5">
+                          <p className="text-sm text-slate-600 mt-1.5 break-all">
                             {cert.certificateUrl}
                           </p>
                         )}
@@ -218,6 +235,14 @@ export default function FreelancerProfile() {
 
           {/* right column */}
           <div className="space-y-6">
+            <SectionCard icon={ShieldCheck} title="Verification">
+              <VerificationBadgeList 
+                verification={profile.verification} 
+                onUploadId={handleUploadIdDocument}
+                uploadingId={uploadingId}
+              />
+            </SectionCard>
+
             <SectionCard title="Skills">
               {profile.skills?.length ? (
                 <div className="flex flex-wrap gap-2">
@@ -314,7 +339,7 @@ export default function FreelancerProfile() {
         </div>
         <ReviewAnalytics 
           analytics={analytics}
-          />
+        />
       </div>
 
       {isEditing && (

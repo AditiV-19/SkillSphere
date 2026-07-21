@@ -289,7 +289,6 @@ export const getAdminFreelancerById = (id) => {
 
 
 // Availability(Booking system)
-
 export const addAvailabilitySlots = (slots) =>{
   return API.post("/availability/slots", { slots });
 }
@@ -306,3 +305,38 @@ export const bookFreelancerSlot = (freelancerUserId, slotId) =>{
 export const cancelBooking = (freelancerUserId, slotId) =>{
   return API.patch(`/availability/${freelancerUserId}/slots/${slotId}/cancel`);
 }
+
+// Verification Badge
+export const submitVerificationRequest = (data) => {
+  return API.post("/profile/freelancer/verification/submit", data);
+};
+export const getMyVerificationStatus = () => {
+  return API.get("/profile/freelancer/verification/status");
+};
+
+// Admin: Get all pending verifications
+export const getPendingVerifications = () => {
+  return API.get("/profile/freelancer/verification/pending");
+};
+// Admin: Approve a freelancer's verification
+export const approveVerification = (id, data) => {
+  return API.put(`/profile/freelancer/verification/${id}/approve`, data);
+};
+// Admin: Reject a freelancer's verification
+export const rejectVerification = (id, data) => {
+  return API.put(`/profile/freelancer/verification/${id}/reject`, data);
+};
+
+export const handleIdUpload = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("documentType", "ID");
+
+  const response = await API.post("/users/upload/verification", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
+};

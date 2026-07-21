@@ -163,6 +163,56 @@ const freelancerSchema = new Schema(
 
       default: 0,
     },
+
+    // ===========================
+    // VERIFICATION BADGE SYSTEM
+    // ===========================
+    verification: {
+      badges: [
+        {
+          type: String,
+          enum: [
+            "Identity Verified", 
+            "Skill Certified", 
+            // "Top Rated", 
+            // "Background Checked"
+          ],
+        }
+      ],
+
+      documents: [
+        {
+          documentType: { 
+            type: String, 
+            enum: ["ID", "Certificate", "Address Proof"],
+            required: true
+          },
+          url: { type: String, required: true },
+          uploadedAt: { type: Date, default: Date.now }
+        }
+      ],
+ 
+      status: {
+        type: String,
+        enum: ["unverified", "pending", "verified", "rejected"],
+        default: "unverified",
+      },
+ 
+      submittedAt: { type: Date, default: null },
+      verifiedAt: { type: Date, default: null },
+      verifiedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      rejectionReason: { type: String, default: "" },
+    },
+ 
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
     // ===========================
     // REPUTATION
     // ===========================
@@ -193,6 +243,12 @@ const freelancerSchema = new Schema(
   },
   { timestamps: true },
 );
+
+freelancerSchema.pre("save", function () {
+  if (this.isModified("verification")) {
+    this.isVerified = this.verification?.status === "verified";
+  }
+});
 
 const clientSchema = new Schema(
   {
