@@ -1,12 +1,10 @@
 import { FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
-
 import React, { useState } from "react";
-import { MapPin, Phone } from "lucide-react";
+import { MapPin, Phone, BadgeCheck } from "lucide-react";
 
-export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow, isProfileCompletion}) {
+export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow, isProfileCompletion }) {
 
-  const user = localStorage.getItem('user')? JSON.parse(localStorage.getItem("user"))
-  : null;
+  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem("user")) : null;
 
   const locationText =
     typeof profile.location === "string"
@@ -21,8 +19,6 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow
 
   const phoneText = profile.phone || profile.contactPerson?.phone;
 
-  // Freelancers store their photo in `profilePicture`; clients store their
-  // logo in `companyLogo`. Prefer whichever one is actually present.
   const displayImage = profile.profilePicture || profile.companyLogo;
 
   // Freelancers show a person's name; clients show the company name.
@@ -63,6 +59,11 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow
     Unavailable: "bg-slate-100 text-slate-600 ring-slate-500/20",
   };
 
+  const isVerified = 
+    profile?.isVerified || 
+    profile?.verification?.status === "verified" || 
+    profile?.verification?.badges?.includes("Identity Verified");
+
   return (
     <div className="bg-white rounded-3xl shadow-sm p-8">
       <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -88,6 +89,19 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow
               <h1 className="text-2xl font-bold text-slate-900 truncate">
                 {displayName}
               </h1>
+              
+              {/* 👇 Added the Verified Badge here */}
+              {user.role === 'freelancer' && isVerified ? (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                  <BadgeCheck className="w-3.5 h-3.5" />
+                  Verified
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-slate-50 text-slate-600 ring-1 ring-inset ring-slate-500/20">
+                  Unverified
+                </span>
+              )}
+
               {profile.availability?.status && (
                 <span
                   className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ring-1 ring-inset ${
@@ -129,34 +143,33 @@ export default function ProfileHeader({ isEditing, setIsEditing, profile, isShow
         </div>
 
         {/* Edit Button */}
-        { isShow && (<button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition font-medium"
-          onClick={() => setIsEditing(true)}
-        >
-          {isEditing ? "Save Profile" : "Edit Profile"}
-        </button>)
-        }
-        
+        {isShow && (
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition font-medium"
+            onClick={() => setIsEditing(true)}
+          >
+            {isEditing ? "Save Profile" : "Edit Profile"}
+          </button>
+        )}
       </div>
 
       {/* Completion Bar */}
-      {isProfileCompletion &&
+      {isProfileCompletion && (
         <div className="mt-8 pt-6 border-t border-slate-100">
-        <div className="flex items-center justify-between text-sm mb-2">
-          <span className="font-medium text-slate-700">Profile completion</span>
-          <span className="font-bold text-blue-700">
-            {profile.profileCompletion}%
-          </span>
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span className="font-medium text-slate-700">Profile completion</span>
+            <span className="font-bold text-blue-700">
+              {profile.profileCompletion}%
+            </span>
+          </div>
+          <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-600 rounded-full transition-all duration-500"
+              style={{ width: `${profile.profileCompletion}%` }}
+            />
+          </div>
         </div>
-        <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-600 rounded-full transition-all duration-500"
-            style={{ width: `${profile.profileCompletion}%` }}
-          />
-        </div>
-      </div>
-      }
-      
+      )}
     </div>
   );
 }
