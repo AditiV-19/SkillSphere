@@ -8,12 +8,13 @@ import {
   FaUsers,
   FaChartBar,
   FaFlag,
+  FaEye,
+  FaWallet,
+  FaLock,
 } from "react-icons/fa";
 
 export const dashboardContent = {
-
   freelancer: {
-
     hero: {
       title: "Ready to land your next project?",
       subtitle:
@@ -26,71 +27,64 @@ export const dashboardContent = {
 
     stats: [
       {
-        title: "My Gigs",
+        title: "Profile Views",
         value: "0",
-        subtitle: "Active gigs",
+        subtitle: "Lifetime views",
+        icon: FaEye,
+        color: "bg-blue-500",
+      },
+      {
+        title: "Gig Applications",
+        value: "0",
+        subtitle: "Total proposals sent",
         icon: FaBriefcase,
-        color: "bg-blue-500",
+        color: "bg-purple-500",
       },
-
       {
-        title: "Applications",
-        value: "0",
-        subtitle: "Sent",
-        icon: FaClipboardList,
-        color: "bg-green-500",
-      },
-
-      {
-        title: "Earnings",
+        title: "Available Earnings",
         value: "₹0",
-        subtitle: "Total earned",
-        icon: FaMoneyBillWave,
-        color: "bg-purple-500",
-      },
-
-      {
-        title: "Profile",
-        value: "80%",
-        subtitle: "Completed",
-        icon: FaUser,
-        color: "bg-orange-500",
-      },
-    ],
-
-    quickActions: [
-      {
-        title: "Complete Profile",
-        description: "Increase your chances of getting hired.",
-        icon: FaUser,
-        color: "bg-blue-500",
-        route: "/freelancer/profile",
-      },
-
-      {
-        title: "Check Invitations",
-        description: "Start application of your skills.",
-        icon: FaPlusCircle,
+        subtitle: "Total Earned: $0",
+        icon: FaWallet,
         color: "bg-green-500",
-        route: "/freelancer/invitations",
       },
-
       {
-        title: "Browse Projects",
-        description: "Apply for freelance work.",
-        icon: FaSearch,
-        color: "bg-purple-500",
-        route: "/client/marketplace",
+        title: "Funds in Escrow",
+        value: "₹0",
+        subtitle: "Awaiting milestone completion",
+        icon: FaLock,
+        color: "bg-gray-700",
       },
     ],
+
+    // quickActions: [
+    //   {
+    //     title: "Complete Profile",
+    //     description: "Increase your chances of getting hired.",
+    //     icon: FaUser,
+    //     color: "bg-blue-500",
+    //     route: "/freelancer/profile",
+    //   },
+    //   {
+    //     title: "Check Invitations",
+    //     description: "Start application of your skills.",
+    //     icon: FaPlusCircle,
+    //     color: "bg-green-500",
+    //     route: "/freelancer/invitations",
+    //   },
+    //   {
+    //     title: "Browse Projects",
+    //     description: "Apply for freelance work.",
+    //     icon: FaSearch,
+    //     color: "bg-purple-500",
+    //     route: "/client/marketplace",
+    //   },
+    // ],
   },
 
   client: {
-
     hero: {
       title: "Find the perfect freelancer.",
-      subtitle:
-        "Post projects, review applications and hire top talent.",
+      subtitle: "Post projects, review applications and hire top talent.",
       primaryButton: "Post Project",
       primaryRoute: "/client/post-project",
       secondaryButton: "Browse Freelancers",
@@ -105,7 +99,6 @@ export const dashboardContent = {
         icon: FaBriefcase,
         color: "bg-blue-500",
       },
-
       {
         title: "Applications",
         value: "0",
@@ -113,7 +106,6 @@ export const dashboardContent = {
         icon: FaClipboardList,
         color: "bg-green-500",
       },
-
       {
         title: "Freelancers",
         value: "0",
@@ -121,7 +113,6 @@ export const dashboardContent = {
         icon: FaUsers,
         color: "bg-purple-500",
       },
-
       {
         title: "Spent",
         value: "₹0",
@@ -139,7 +130,6 @@ export const dashboardContent = {
         color: "bg-blue-500",
         route: "/client/post-project",
       },
-
       {
         title: "Browse Freelancers",
         description: "Find the right talent.",
@@ -151,11 +141,9 @@ export const dashboardContent = {
   },
 
   admin: {
-
     hero: {
       title: "Platform Overview",
-      subtitle:
-        "Monitor users, projects and platform activity.",
+      subtitle: "Monitor users, projects and platform activity.",
       primaryButton: "Manage Users",
       primaryRoute: "/admin/users",
       secondaryButton: "Analytics",
@@ -170,7 +158,6 @@ export const dashboardContent = {
         icon: FaUsers,
         color: "bg-blue-500",
       },
-
       {
         title: "Projects",
         value: "0",
@@ -178,7 +165,6 @@ export const dashboardContent = {
         icon: FaBriefcase,
         color: "bg-green-500",
       },
-
       {
         title: "Reports",
         value: "0",
@@ -186,7 +172,6 @@ export const dashboardContent = {
         icon: FaFlag,
         color: "bg-red-500",
       },
-
       {
         title: "Analytics",
         value: "100%",
@@ -204,7 +189,6 @@ export const dashboardContent = {
         color: "bg-blue-500",
         route: "/admin/users",
       },
-
       {
         title: "Platform Analytics",
         description: "Monitor the platform.",

@@ -6,6 +6,7 @@ import {
   getGigs,
   getReviewAnalytics,
   inviteFreelancerToGig,
+  incrementProfileViews, // 👈 ADDED IMPORT
 } from "../../services/api.js";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
@@ -39,7 +40,6 @@ const formatDate = (date) => {
 };
 
 //-------------INVITE MODAL-------------------
-
 function InviteToGigModal({ freelancerUserId, onClose }) {
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,12 +54,10 @@ function InviteToGigModal({ freelancerUserId, onClose }) {
   const fetchOpenGigs = async () => {
     try {
       setLoading(true);
-      // Only gigs this client owns and that are still open can receive invites
       const response = await getGigs({ status: "open" });
       const list = response.data?.gigs || response.data || [];
       setGigs(list);
 
-      // Pre-mark gigs where this freelancer is already invited
       const already = new Set(
         list
           .filter((g) => g.invitedFreelancers?.includes(freelancerUserId))
@@ -168,9 +166,8 @@ function InviteToGigModal({ freelancerUserId, onClose }) {
 }
 
 //-------------MAIN PAGE-------------------
-
 export default function ViewFreelancerProfile() {
-  const { id } = useParams(); // 🚀 Dynamically extract dynamic professional ID from route parametrics
+  const { id } = useParams(); 
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
@@ -178,32 +175,48 @@ export default function ViewFreelancerProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const user = JSON.parse(localStorage.getItem("user") || "null")
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
+  // 👈 UPDATED USEEFFECT
   useEffect(() => {
     fetchFreelancerProfile();
+    // Removed the recordView() call from here to prevent it from firing too early
   }, [id]);
 
   const fetchFreelancerProfile = async () => {
     try {
       setLoading(true);
       setError("");
-      const response = user.role === 'client' ? await getFreelancerById(id) : await getAdminFreelancerById(id);
+      
+      const response =
+        user.role === "client"
+          ? await getFreelancerById(id)
+          : await getAdminFreelancerById(id);
 
       const freelancerProfile = response.data?.freelancer || response.data;
-    setProfile(freelancerProfile);
+      setProfile(freelancerProfile);
 
-    const userId = freelancerProfile.user?._id || freelancerProfile.user;
-    if (userId) {
-      try {
-        const analyticsResponse = await getReviewAnalytics(userId);
-        setAnalytics(analyticsResponse.data.analytics);
-      } catch (analyticsErr) {
-        // Don't fail the whole page if analytics alone can't be fetched —
-        // it's a supplementary panel, not core profile data
-        console.error("Failed to load review analytics:", analyticsErr);
+      // Extract the guaranteed User ID
+      const userId = freelancerProfile.user?._id || freelancerProfile.user;
+
+      if (userId) {
+        // 1. Silently record the profile view using the CORRECT User ID
+        if (user.role === "client") {
+          try {
+            await incrementProfileViews(userId);
+          } catch (viewErr) {
+            console.error("Failed to record profile view:", viewErr);
+          }
+        }
+
+        // 2. Fetch the review analytics
+        try {
+          const analyticsResponse = await getReviewAnalytics(userId);
+          setAnalytics(analyticsResponse.data.analytics);
+        } catch (analyticsErr) {
+          console.error("Failed to load review analytics:", analyticsErr);
+        }
       }
-    }
     } catch (err) {
       console.error(err);
       setError(
@@ -249,13 +262,11 @@ export default function ViewFreelancerProfile() {
     );
   }
 
-  // The freelancer's User._id — invitedFreelancers on Gig refs "User", not FreelancerProfile
   const freelancerUserId = profile.user?._id || profile.user;
 
   return (
     <DashboardLayout>
       <div className="p-8 bg-slate-50/50 min-h-screen">
-        {/* Navigation Breadcrumb + Invite action */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => navigate("/client/browse")}
@@ -265,30 +276,26 @@ export default function ViewFreelancerProfile() {
             <span>Back to Talents</span>
           </button>
 
-          {user.role === 'client' && (
+          {user.role === "client" && (
             <button
-                  onClick={() => setShowInviteModal(true)}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors"
-                >
-                  <Send size={14} />
-                  Send Invitation
-                </button>
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-colors"
+            >
+              <Send size={14} />
+              Send Invitation
+            </button>
           )}
-          
         </div>
 
-        {/* Dynamic Read-Only Header */}
         <ProfileHeader
           isEditing={false}
-          setIsEditing={() => {}} // Disabled editing triggers safely
+          setIsEditing={() => {}}
           profile={profile}
           isShow={false}
           isProfileCompletion={false}
         />
 
-        {/* Core Profile Parameters Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Main Context Left Column */}
           <div className="lg:col-span-2 space-y-6">
             <SectionCard icon={Sparkles} title="About Professional">
               <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
@@ -401,7 +408,6 @@ export default function ViewFreelancerProfile() {
             </SectionCard>
           </div>
 
-          {/* Sidebar Parameter Right Column */}
           <div className="space-y-6">
             <SectionCard title="Core Competencies">
               {profile.skills?.length ? (
@@ -497,25 +503,23 @@ export default function ViewFreelancerProfile() {
               </div>
             </SectionCard>
 
-            {/* Live Consultation Booking Sub-Card */}
-           <SectionCard icon={Calendar} title="Schedule Consultation">
-            {user.role === 'client' && (
-              <BookableSlots
-                freelancerUserId={freelancerUserId}
-                slots={profile.availability?.slots || []}
-                onBooked={fetchFreelancerProfile}
-                onCancelled={fetchFreelancerProfile}
-              />
-            )}
-          </SectionCard>
+            <SectionCard icon={Calendar} title="Schedule Consultation">
+              {user.role === "client" && (
+                <BookableSlots
+                  freelancerUserId={freelancerUserId}
+                  slots={profile.availability?.slots || []}
+                  onBooked={fetchFreelancerProfile}
+                  onCancelled={fetchFreelancerProfile}
+                />
+              )}
+            </SectionCard>
           </div>
-          
         </div>
         <div className="mt-8">
-        <ReviewAnalytics analytics={analytics} />
+          <ReviewAnalytics analytics={analytics} />
         </div>
       </div>
-      
+
       {showInviteModal && (
         <InviteToGigModal
           freelancerUserId={freelancerUserId}

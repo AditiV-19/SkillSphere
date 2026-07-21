@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 import { ClientProfile, FreelancerProfile } from "../models/profile.model.js";
 import { calculateProfileCompletion } from "../utils/profileCompletion.js";
 import { sendNotification } from "../services/notification.services.js";
+import { generateReviewAnalytics } from "../utils/reviewAnalytics.js";
+import { Review } from "../models/review.model.js";
+import { Payment } from "../models/payment.model.js"
+import { Proposal } from "../models/proposal.model.js";
 
 // Create Profile
 
@@ -632,4 +636,133 @@ export const rejectVerification = async (req, res) => {
 
     }
 
+};
+
+export const incrementProfileViews = async (req, res) => {
+  try {
+    const freelancerId = req.params.id; // The user ID of the freelancer being viewed
+    const viewerId = req.user?.id; // The user ID of the person looking at the profile
+
+    // Prevent freelancers from boosting their own view count
+    if (viewerId === freelancerId) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "Own profile view ignored." 
+      });
+    }
+
+    // Atomically increment the views field by 1
+    const profile = await FreelancerProfile.findOneAndUpdate(
+      { user: freelancerId },
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+
+    if (!profile) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Freelancer profile not found." 
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Profile view recorded." 
+    });
+  } catch (error) {
+    console.error("Error incrementing profile views:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to record profile view." 
+    });
+  }
+};
+
+export const getFreelancerDashboardAnalytics = async (req, res) => {
+  try {
+    const freelancerId = req.user.id; 
+    // 1. Manually cast the string ID to an ObjectId for the aggregation pipelines
+    const freelancerObjectId = new mongoose.Types.ObjectId(freelancerId);
+
+    const profile = await FreelancerProfile.findOne({ user: freelancerId }).select("views");
+    const profileViews = profile?.views || 0;
+
+    // This is correct! countDocuments auto-casts strings to ObjectIds
+    const gigApplications = await Proposal.countDocuments({ freelancerUser: freelancerId });
+
+    // 3. Earnings Statistics
+    const earningsAgg = await Payment.aggregate([
+      { $match: { freelancer: freelancerObjectId } }, // 👈 FIXED: using the ObjectId
+      { 
+        $group: {
+          _id: "$status",
+          total: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    let totalEarnings = 0;
+    let activeEscrow = 0;
+    let availableForWithdrawal = 0;
+
+    earningsAgg.forEach(stat => {
+      if (stat._id === 'paid_out') totalEarnings += stat.total;
+      if (stat._id === 'held') activeEscrow += stat.total;
+      if (stat._id === 'released') availableForWithdrawal += stat.total;
+    });
+
+    // 4. Monthly Revenue Chart (Last 6 Months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const monthlyRevenueRaw = await Payment.aggregate([
+      {
+        $match: {
+          freelancer: freelancerObjectId, // 👈 FIXED: using the ObjectId
+          status: { $in: ["released", "paid_out"] },
+          createdAt: { $gte: sixMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+          revenue: { $sum: "$amount" }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const revenueData = monthlyRevenueRaw.map(m => ({
+      month: monthNames[m._id.month - 1],
+      revenue: m.revenue
+    }));
+
+    // 5. Client Feedback Analytics
+    const reviews = await Review.find({ reviewee: freelancerId });
+    const feedbackAnalytics = generateReviewAnalytics(reviews);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        profileViews,
+        gigApplications,
+        earningsStatistics: {
+          totalEarnings,
+          activeEscrow,
+          availableForWithdrawal
+        },
+        revenueData,
+        feedbackAnalytics: {
+          averageRating: feedbackAnalytics.averageRating,
+          totalReviews: feedbackAnalytics.totalReviews,
+          successRate: feedbackAnalytics.positivePercentage // 👈 FIXED: mapped to positivePercentage
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Dashboard analytics error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch dashboard analytics." });
+  }
 };

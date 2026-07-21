@@ -348,3 +348,11 @@ export const handleIdUpload = async (file) => {
 
   return response.data;
 };
+
+// Frelancer Dashboard Analytics
+export const getFreelancerDashboardAnalytics = () => {
+  return API.get(`/profile/freelancer/analytics`);
+};
+export const incrementProfileViews = async (freelancerId) => {
+  return API.put(`/profile/freelancer/${freelancerId}/view`);
+};

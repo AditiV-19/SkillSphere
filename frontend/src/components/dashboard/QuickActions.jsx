@@ -7,6 +7,8 @@ export default function QuickActions() {
 
     const role = user?.role || "freelancer";
 
+    if(role === 'freelancer') return null
+
     const actions = dashboardContent[role].quickActions;
 
     return (
