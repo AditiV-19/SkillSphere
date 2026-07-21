@@ -75,8 +75,11 @@ const userSchema = new Schema(
             type: Boolean,
             default: false
         },
-        twoFactorSecret: {
+        twoFactorCode: {
             type: String, 
+        },
+        twoFactorExpires: {
+            type: Date
         }
     },
     {

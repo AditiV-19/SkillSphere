@@ -93,3 +93,20 @@ export const sendPasswordResetEmail = async (email, resetUrl) => {
         throw new Error("Failed to send email");
     }
 };
+
+export const send2FAEmail = async (email, code) => {
+    try {
+        await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Your SkillSphere Login Code",
+        html: `<h2>Your Authentication Code</h2>
+               <p>Enter the following 6-digit code to log in. This code expires in 10 minutes.</p>
+               <h1 style="letter-spacing: 5px; font-size: 32px; color: #2563eb;">${code}</h1>`
+    });
+        
+    } catch (error) {
+        throw new Error("Failed to send email");
+    }
+    
+};

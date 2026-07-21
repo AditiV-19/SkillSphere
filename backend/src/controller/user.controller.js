@@ -1,10 +1,11 @@
 import {User} from '../models/user.model.js'
 import jwt from 'jsonwebtoken'
 import { OAuth2Client } from "google-auth-library";
-import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.services.js';
+import { sendVerificationEmail, sendPasswordResetEmail, send2FAEmail } from '../services/email.services.js';
 import crypto from 'crypto'
 import { ClientProfile, FreelancerProfile } from '../models/profile.model.js';
-
+import speakeasy from 'speakeasy';
+import qrcode from 'qrcode';
 
 // Register
 export const registerUser = async(req, res) =>{
@@ -89,6 +90,25 @@ export const loginUser = async(req, res) => {
             message: "Please verify your email before logging in."
         })
 
+        // --- 2FA EMAIL INTERCEPT LOGIC ---
+        if (user.isTwoFactorEnabled) {
+            // Generate a random 6-digit number
+            const otpCode = crypto.randomInt(100000, 999999).toString();            
+            // Save it to the database with a 10-minute expiration
+            user.twoFactorCode = otpCode;
+            user.twoFactorExpires = Date.now() + 10 * 60 * 1000;
+            await user.save();
+
+            // Send the email!
+            await send2FAEmail(user.email, otpCode);
+
+            return res.status(200).json({
+                message: "A 6-digit code has been sent to your email.",
+                requires2FA: true,
+                userId: user._id
+            });
+        }
+        
         const token = jwt.sign(
             {   id: user._id,
                 role: user.role
@@ -290,6 +310,65 @@ export const resetPassword = async (req, res) => {
         await user.save();
 
         res.status(200).json({ message: "Password successfully reset. You can now log in." });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+// ==========================================
+// VERIFY 2FA LOGIN 
+// ==========================================
+export const verify2FALogin = async (req, res) => {
+    try {
+        const { userId, token } = req.body; 
+        const user = await User.findById(userId);
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Check if code matches and hasn't expired
+        if (user.twoFactorCode !== token || user.twoFactorExpires < Date.now()) {
+            return res.status(400).json({ message: "Invalid or expired code. Please try again." });
+        }
+
+        // Success! Clear the code from the database
+        user.twoFactorCode = undefined;
+        user.twoFactorExpires = undefined;
+        await user.save();
+
+        const jwtToken = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
+
+        res.status(200).json({
+            message: 'Login successfully',
+            token: jwtToken,
+            user: {
+                id: user._id, email: user.email, username: user.username, role: user.role,
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+// ==========================================
+// TOGGLE 2FA SETTING
+// ==========================================
+export const toggle2FA = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Just flip the boolean!
+        user.isTwoFactorEnabled = !user.isTwoFactorEnabled;
+        await user.save();
+
+        res.status(200).json({ 
+            message: user.isTwoFactorEnabled ? "2FA Enabled" : "2FA Disabled",
+            isEnabled: user.isTwoFactorEnabled
+        });
     } catch (error) {
         res.status(500).json({ message: "Internal server error", error: error.message });
     }

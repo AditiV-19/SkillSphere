@@ -35,6 +35,7 @@ import ResetPassword from "./pages/auth/ResetPassowrd";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import VerificationReview from "./pages/admin/VerificationReview";
 import ViewClientProfile from "./pages/ViewClientProfile";
+import Settings from "./components/Settings";
 
 export default function App() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -301,7 +302,8 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
+      
+      <Route path="/settings" element={<Settings />} />
 
       <Route path="/transactions" element={<TransactionHistory />} />
 

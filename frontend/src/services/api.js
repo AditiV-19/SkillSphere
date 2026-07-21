@@ -35,9 +35,15 @@ export const verifyEmail = (token) => {
 export const forgotPassword = (data) => {
   return API.post("/forgot-password", data);
 };
-
 export const resetPassword = (token, data) => {
   return API.post(`/reset-password/${token}`, data);
+};
+
+export const toggle2FA = () => {
+  return API.post(`/2fa/toggle`);
+};
+export const verify2FALogin = (data) => {
+  return API.post(`/2fa/verify-login`, data);
 };
 
 export const getProfile = (role) => {
