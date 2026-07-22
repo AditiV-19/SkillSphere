@@ -41,6 +41,40 @@ const reviewSchema = new mongoose.Schema(
       maxlength: 500,
       default: "",
     },
+
+    // ---- Fraud detection metadata ----
+    // metadata: {
+    //   ipAddress: { type: String, default: null },
+    //   userAgent: { type: String, default: null },
+    //   deviceFingerprint: { type: String, default: null },
+    // },
+
+    // fraud: {
+    //   score: { type: Number, default: 0, min: 0, max: 100 },
+    //   status: {
+    //     type: String,
+    //     enum: ["clean", "suspicious", "flagged", "confirmed_fake"],
+    //     default: "clean",
+    //   },
+    //   reasons: [
+    //     {
+    //       check: { type: String },
+    //       weight: { type: Number },
+    //       detail: { type: String },
+    //     },
+    //   ],
+    //   reviewedByAdmin: { type: Boolean, default: false },
+    //   adminDecision: {
+    //     type: String,
+    //     enum: ["pending", "approved", "removed"],
+    //     default: "pending",
+    //   },
+    // },
+
+    // isVisible: {
+    //   type: Boolean,
+    //   default: true,
+    // },
   },
   { timestamps: true },
 );
@@ -53,5 +87,7 @@ reviewSchema.index(
   },
   { unique: true },
 );
+
+reviewSchema.index({ "fraud.status": 1 });
 
 export const Review = mongoose.model("Review", reviewSchema);
