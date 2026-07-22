@@ -2,6 +2,7 @@ import { sidebarMenus } from "../data/sidebarMenus";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { FaSignOutAlt, FaColumns } from "react-icons/fa";
+import { logoutUser } from "../services/api";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -11,6 +12,16 @@ export default function Sidebar() {
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role || "freelancer";
   const menuItems = sidebarMenus[role];
+
+  const handleLogout = async () => {
+  try {
+    await logoutUser()
+    localStorage.removeItem('user');
+    navigate('/');
+  } catch (error) {
+    console.error("Failed to log out", error);
+  }
+};
 
   return (
     // 1. Added transition-all and dynamic width based on state
@@ -48,7 +59,9 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t">
-        <button className={`w-full flex items-center ${toggleSidebar ? "gap-4" : "justify-center"} px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition`}>
+        <button className={`w-full flex items-center ${toggleSidebar ? "gap-4" : "justify-center"} px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition`}
+        onClick={handleLogout}
+        >
           <FaSignOutAlt />
           {toggleSidebar && "Logout"}
         </button>

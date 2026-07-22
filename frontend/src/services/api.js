@@ -24,6 +24,10 @@ export const loginUser = (userData) => {
   return API.post("/login", userData);
 };
 
+export const logoutUser = () => {
+  return API.post("/logout");
+};
+
 export const googleLogin = (payload) => {
   return API.post("/google", payload)
 }
