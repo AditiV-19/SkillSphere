@@ -624,28 +624,44 @@ export const getFreelancerInvitations = async (req, res) => {
 // Assigned gigs for freelancer
 export const getFreelancerAssignedGigs = async (req, res) => {
   try {
-    // 1. Find all proposals submitted by this user that have been officially accepted
-    // req.user.id is populated automatically by your authMiddleware
     const acceptedProposals = await Proposal.find({
       freelancerUser: req.user.id,
       status: "accepted",
-    }).select("gig"); // We only need the gig IDs to perform the secondary lookup
+    }).select("gig"); 
 
     if (!acceptedProposals || acceptedProposals.length === 0) {
       return res.json({
         success: true,
+        count: 0,
         gigs: [],
       });
     }
 
-    // 2. Extract out all unique Gig ObjectIDs from those accepted proposals
     const assignedGigIds = acceptedProposals.map((proposal) => proposal.gig);
 
-    // 3. Fetch the full details of those specific gigs
-    // We populate the client field to show the company details on the frontend cards
-    const gigs = await Gig.find({ _id: { $in: assignedGigIds } })
+    const rawGigs = await Gig.find({ _id: { $in: assignedGigIds } })
       .populate("client", "companyName industry location")
       .sort({ updatedAt: -1 });
+
+    const gigs = rawGigs.map((gig) => {
+      const gigObj = gig.toObject();
+      let completionPercentage = 0;
+
+      if (gigObj.milestones && gigObj.milestones.length > 0) {
+        const completedCount = gigObj.milestones.filter(
+          (m) => m.status === "completed"
+        ).length;
+        
+        completionPercentage = Math.round(
+          (completedCount / gigObj.milestones.length) * 100
+        );
+      }
+
+      return {
+        ...gigObj,
+        completionPercentage,
+      };
+    });
 
     return res.json({
       success: true,
