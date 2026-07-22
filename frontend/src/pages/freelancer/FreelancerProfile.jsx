@@ -98,6 +98,9 @@ export default function FreelancerProfile() {
   // profile.isVerified is kept in sync server-side (see the freelancer
   // schema's pre-save hook) whenever verification.status === "verified".
   const isFullyVerified = !!profile.isVerified;
+  // Extract the URL safely, whether the backend sends a string or an object
+  const resumeData = profile.portfolio?.resume;
+  const resumeUrl = typeof resumeData === 'string' ? resumeData : resumeData?.url;
 
   return (
     <>
@@ -217,9 +220,14 @@ export default function FreelancerProfile() {
                         </p>
 
                         {cert.certificateUrl && (
-                          <p className="text-sm text-slate-600 mt-1.5 break-all">
-                            {cert.certificateUrl}
-                          </p>
+                          <a
+                            href={cert.certificateUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            Certificate
+                          </a>
                         )}
                       </div>
                     </li>
@@ -231,6 +239,9 @@ export default function FreelancerProfile() {
                 </p>
               )}
             </SectionCard>
+
+          <FreelancerScheduleManager />
+
           </div>
 
           {/* right column */}
@@ -312,20 +323,20 @@ export default function FreelancerProfile() {
                     <Globe className="w-4 h-4" /> Website
                   </a>
                 )}
-                {profile.portfolio?.resume && (
+                {resumeUrl && (
                   <a
-                    href={profile.portfolio.resume}
+                    href={resumeUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-700"
                   >
-                    <FileText className="w-4 h-4" /> Resume
+                    <FileText className="w-4 h-4" /> {typeof resumeData === 'object' && resumeData.fileName ? resumeData.fileName : "Resume"}
                   </a>
                 )}
                 {!profile.portfolio?.github &&
                   !profile.portfolio?.linkedin &&
                   !profile.portfolio?.website &&
-                  !profile.portfolio?.resume && (
+                  !resumeUrl && (
                     <p className="text-sm text-slate-400">
                       No links added yet.
                     </p>
@@ -333,7 +344,6 @@ export default function FreelancerProfile() {
               </div>
             </SectionCard>
 
-            <FreelancerScheduleManager />
             
           </div>
         </div>

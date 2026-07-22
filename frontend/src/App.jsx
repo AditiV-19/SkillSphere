@@ -303,9 +303,18 @@ export default function App() {
         }
       />
       
-      <Route path="/settings" element={<Settings />} />
+      <Route path="/settings" element={
+         <ProtectedRoute allowedRoles={["freelancer", "client", "admin"]}>
+            <Settings />
+          </ProtectedRoute>
+          } />
 
-      <Route path="/transactions" element={<TransactionHistory />} />
+      <Route path="/transactions" element={
+         <ProtectedRoute allowedRoles={["freelancer", "client", "admin"]}>
+          <TransactionHistory />          
+        </ProtectedRoute>
+        } 
+        />
 
     </Routes>
   );
