@@ -47,6 +47,8 @@ export default function ClientProfile() {
       console.log("UPDATED PROFILE:", response.data);
 
       setProfile(response.data);
+      
+      await fetchProfile();
 
       setIsEditing(false);
     } catch (error) {

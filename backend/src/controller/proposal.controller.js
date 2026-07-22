@@ -180,13 +180,12 @@ export const updateProposalStatus = async (req, res) => {
         message: "The client has started negotiating your proposal.",
         link: "/freelancer/gig/applications",
       });
-
-      return res.json({
+    }
+    return res.json({
         success: true,
         message: `Proposal status updated to ${status}`,
         proposal,
       });
-    }
   } catch (error) {
     return res
       .status(500)
@@ -202,7 +201,7 @@ export const getCompanyAllApplications = async (req, res) => {
       return res.status(404).json({
         success: false,
         message:
-          "Client profile profile registry index not found for this user account.",
+          "Client profile registry index not found for this user account.",
       });
     }
 
@@ -213,7 +212,7 @@ export const getCompanyAllApplications = async (req, res) => {
     const gigsWithApplications = await Promise.all(
       gigs.map(async (gig) => {
         const proposals = await Proposal.find({ gig: gig._id })
-          .populate("freelancerUser", "firstName lastName email")
+          .populate("freelancerUser", "username email")
           .sort({ createdAt: -1 });
 
         return {

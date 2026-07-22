@@ -20,6 +20,7 @@ export default function ClientGigApplications() {
   const [gigDeck, setGigDeck] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Drawer / Overlay Detail States
   const [selectedGig, setSelectedGig] = useState(null);
@@ -28,49 +29,71 @@ export default function ClientGigApplications() {
     fetchCompanyDataDeck();
   }, []);
 
-  const fetchCompanyDataDeck = async () => {
+  // ✅ UPGRADE: Added "isSilent" parameter. 
+  // If true, it refreshes data in the background without showing the loading screen!
+  const fetchCompanyDataDeck = async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
+      
       const res = await getCompanyApplicationsDeck();
-      setGigDeck(res.data?.data || []);
+      const freshData = res.data?.data || [];
+      
+      setGigDeck(freshData);
+
+      // ✅ Ensure the open drawer gets the fresh data automatically
+      setSelectedGig((prev) => {
+        if (!prev) return null;
+        // Find the matching gig in the freshly downloaded data
+        return freshData.find(g => g._id === prev._id) || prev;
+      });
+      
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Failed to parse organization workspace deck.",
-      );
+      if (!isSilent) {
+        setError(
+          err.response?.data?.message ||
+            "Failed to parse organization workspace deck.",
+        );
+      }
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   const handleStatusChange = async (proposalId, newStatus) => {
+    // ✅ UPGRADE 1: Customized Confirmation Alerts
+    let confirmMessage = "";
+    if (newStatus === "accepted") {
+      confirmMessage = "Are you sure you want to ACCEPT this proposal? This will finalize the contract.";
+    } else if (newStatus === "rejected") {
+      confirmMessage = "Are you sure you want to REJECT this proposal? This action cannot be undone.";
+    } else if (newStatus === "negotiating") {
+      confirmMessage = "Do you want to open negotiations for this proposal?";
+    }
+
+    // Show popup. If user clicks "Cancel", stop the function.
+    if (!window.confirm(confirmMessage)) return;
+
     try {
+      setIsUpdating(true);
+      
+      // Update the backend
       await updateProposalStatus(proposalId, newStatus);
-      alert(`Proposal status marked as ${newStatus}!`);
+      
+      // Show success message
+      alert(`Success: Proposal successfully marked as ${newStatus.toUpperCase()}`);
 
-      // Update Master State Deck locally smoothly
-      setGigDeck((prevDeck) =>
-        prevDeck.map((gig) => ({
-          ...gig,
-          proposals: gig.proposals.map((p) =>
-            p._id === proposalId ? { ...p, status: newStatus } : p,
-          ),
-        })),
-      );
+      // ✅ UPGRADE 2: "Silent Refresh"
+      // This pulls the latest data from your database (updating both the Proposal AND the Gig status)
+      // without closing the drawer or flashing the loading screen!
+      await fetchCompanyDataDeck(true);
 
-      // Also update the currently open detail view drawer state instantly
-      if (selectedGig) {
-        setSelectedGig((prev) => ({
-          ...prev,
-          proposals: prev.proposals.map((p) =>
-            p._id === proposalId ? { ...p, status: newStatus } : p,
-          ),
-        }));
-      }
     } catch (err) {
+      console.error("Status Update Error:", err);
       alert(
         err.response?.data?.message || "Failed to adjust operational status.",
       );
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -121,7 +144,7 @@ export default function ClientGigApplications() {
                     {gig.status}
                   </span>
                   <span className="text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-lg">
-                    {gig.proposalsCount} Bids Received
+                    {gig.proposalsCount || gig.proposals?.length || 0} Bids Received
                   </span>
                 </div>
                 <h3 className="font-bold text-slate-800 text-lg tracking-tight line-clamp-1">
@@ -181,8 +204,7 @@ export default function ClientGigApplications() {
                   {selectedGig.title}
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Evaluating {selectedGig.proposals.length} live freelancer
-                  proposal records
+                  Evaluating {selectedGig.proposals?.length || 0} live freelancer proposal records
                 </p>
               </div>
               <button
@@ -193,9 +215,8 @@ export default function ClientGigApplications() {
               </button>
             </div>
 
-            {/* Loop through specific applications for this individual project selection */}
             <div className="space-y-4 flex-1">
-              {selectedGig.proposals.map((proposal) => (
+              {(selectedGig.proposals || []).map((proposal) => (
                 <div
                   key={proposal._id}
                   className="border border-slate-200 p-5 rounded-2xl bg-slate-50/40 space-y-4"
@@ -204,7 +225,7 @@ export default function ClientGigApplications() {
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm">
                         {proposal.freelancerUser
-                          ? `${proposal.freelancerUser.firstName} ${proposal.freelancerUser.lastName}`
+                          ? `${proposal.freelancerUser.username}`
                           : "Independent Freelancer"}
                       </h4>
                       <p className="text-[11px] text-slate-400">
@@ -232,7 +253,7 @@ export default function ClientGigApplications() {
 
                   <div className="flex gap-4 text-xs font-bold text-slate-500">
                     <span className="flex items-center gap-0.5">
-                      <IndianRupee size={13} className="text-emerald-600" /> ₹
+                      <IndianRupee size={13} className="text-emerald-600" />
                       {proposal.bidAmount}
                     </span>
                     <span className="flex items-center gap-0.5">
@@ -243,38 +264,33 @@ export default function ClientGigApplications() {
 
                   {/* Operational Controls Flow */}
                   <div className="flex justify-end gap-1.5 pt-2 border-t border-slate-100/60">
-                    {proposal.status === "pending" ||
-                    proposal.status === "negotiating" ? (
+                    {proposal.status === "pending" || proposal.status === "negotiating" ? (
                       <>
                         {proposal.status !== "negotiating" && (
                           <button
-                            onClick={() =>
-                              handleStatusChange(proposal._id, "negotiating")
-                            }
-                            className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg transition"
+                            disabled={isUpdating}
+                            onClick={() => handleStatusChange(proposal._id, "negotiating")}
+                            className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg transition disabled:opacity-50"
                           >
                             <MessageSquare size={12} /> Negotiate
                           </button>
                         )}
                         <button
-                          onClick={() =>
-                            handleStatusChange(proposal._id, "rejected")
-                          }
-                          className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg transition"
+                          disabled={isUpdating}
+                          onClick={() => handleStatusChange(proposal._id, "rejected")}
+                          className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg transition disabled:opacity-50"
                         >
                           <X size={12} /> Reject
                         </button>
                         <button
-                          onClick={() =>
-                            handleStatusChange(proposal._id, "accepted")
-                          }
-                          className="flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition"
+                          disabled={isUpdating}
+                          onClick={() => handleStatusChange(proposal._id, "accepted")}
+                          className="flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition disabled:opacity-50"
                         >
                           <Check size={12} /> Accept
                         </button>
                       </>
                     ) : (
-                      /* 🚀 Renders a clean non-clickable receipt message instead of a broken button link */
                       <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md uppercase tracking-wide">
                         Decision Finalized
                       </span>
@@ -283,10 +299,9 @@ export default function ClientGigApplications() {
                 </div>
               ))}
 
-              {selectedGig.proposals.length === 0 && (
+              {(!selectedGig.proposals || selectedGig.proposals.length === 0) && (
                 <div className="text-center py-12 text-slate-400 text-xs font-medium">
-                  No freelancer bids submitted for this specific project
-                  outline.
+                  No freelancer bids submitted for this specific project outline.
                 </div>
               )}
             </div>

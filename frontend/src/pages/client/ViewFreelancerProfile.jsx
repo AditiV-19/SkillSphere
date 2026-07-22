@@ -137,8 +137,8 @@ function InviteToGigModal({ freelancerUserId, onClose }) {
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {gig.budget?.budgetType === "fixed"
-                        ? `$${gig.budget?.min}–$${gig.budget?.max} fixed`
-                        : `$${gig.budget?.min}–$${gig.budget?.max}/hr`}
+                        ? `₹${gig.budget?.min}–₹${gig.budget?.max} fixed`
+                        : `₹${gig.budget?.min}–₹${gig.budget?.max}/hr`}
                     </p>
                   </div>
                   <button

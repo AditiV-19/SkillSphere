@@ -413,7 +413,8 @@ export const updateGig = async (req, res) => {
 // ==========================================
 export const deleteGig = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { gigId } = req.params;
+    const id = gigId
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({

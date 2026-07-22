@@ -117,15 +117,13 @@ export default function ProjectDetails() {
     }
   };
 
-  // 🚀 NEW: Delete Submission Handler
   const handleDeleteProject = async () => {
     try {
       setDeleting(true);
       setError("");
       
-      await deleteGig(id); // Calls your backend DELETE /api/gig/:id route
+      await deleteGig(id);
       
-      // Redirect seamlessly back to the main layout tracking dashboard
       navigate("/client/projects"); 
     } catch (err) {
       setError(err.response?.data?.message || "Failed to discard the project document from the server.");
@@ -168,7 +166,7 @@ export default function ProjectDetails() {
         
         {/* Navigation Breadcrumb */}
         <button 
-          onClick={() => navigate("/my-projects")} 
+          onClick={() => navigate("/client/projects")} 
           className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-blue-600 transition mb-6 uppercase tracking-wider"
         >
           <ChevronLeft size={16} />
@@ -285,7 +283,7 @@ export default function ProjectDetails() {
               </>
             )}
 
-            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {/* <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
                 onClick={() => setActiveView("overview")}
                 className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeView === "overview" ? "bg-white text-slate-800 shadow-sm border border-slate-200/60" : "text-slate-500 hover:text-slate-700"}`}
@@ -298,7 +296,7 @@ export default function ProjectDetails() {
               >
                 Proposals ({gig.proposalsCount || 0})
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
 

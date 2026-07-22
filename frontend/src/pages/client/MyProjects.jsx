@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { Search, Briefcase, DollarSign, Clock, CheckCircle2, FileText, User, ArrowRight } from "lucide-react";
+import { Search, Briefcase, Clock, CheckCircle2, FileText, User, ArrowRight, IndianRupee } from "lucide-react";
 import { getGigs } from "../../services/api"; // ✅ Use getGigs to fetch the list
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 
@@ -89,12 +89,12 @@ export default function MyProjects() {
             >
               Active Contracts
             </button>
-            <button
+            {/* <button
               onClick={() => setActiveTab("pending")}
               className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === "pending" ? "bg-white text-slate-800 shadow-sm border border-slate-200/60" : "text-slate-500 hover:text-slate-700"}`}
             >
               Bids / Review
-            </button>
+            </button> */}
             <button
               onClick={() => setActiveTab("completed")}
               className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === "completed" ? "bg-white text-slate-800 shadow-sm border border-slate-200/60" : "text-slate-500 hover:text-slate-700"}`}
@@ -159,15 +159,15 @@ export default function MyProjects() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-5 border-t border-slate-100 text-sm font-medium text-slate-600">
                 <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
                   <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
-                    <DollarSign size={16} />
+                    <IndianRupee size={16} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">Total Value</p>
-                    <p className="text-slate-700 font-bold text-xs truncate">${gig.budget?.max || 0}</p>
+                    <p className="text-slate-700 font-bold text-xs truncate">₹{gig.budget?.max || 0}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                {/* <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
                   <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 shrink-0">
                     <Clock size={16} />
                   </div>
@@ -175,7 +175,7 @@ export default function MyProjects() {
                     <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">Timeline</p>
                     <p className="text-slate-700 font-bold text-xs truncate">{gig.duration || "Flexible"}</p>
                   </div>
-                </div>
+                </div> */}
 
                 <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
                   <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
@@ -187,7 +187,7 @@ export default function MyProjects() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
+                {/* <div className="flex items-center gap-2 bg-slate-50/60 p-2 rounded-xl border border-slate-100">
                   <div className="p-1.5 rounded-lg bg-amber-50 text-amber-500 shrink-0">
                     <User size={16} />
                   </div>
@@ -195,7 +195,7 @@ export default function MyProjects() {
                     <p className="text-[10px] text-slate-400 font-normal uppercase tracking-wider">Bids</p>
                     <p className="text-slate-700 font-bold text-xs truncate">{gig.proposalsCount || 0} Submissions</p>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           ))}
