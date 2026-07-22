@@ -26,6 +26,7 @@ const TransactionHistory = () => {
   const [statusFilter, setStatusFilter] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const isFreelancer = user?.role === "freelancer";
 
   useEffect(() => {
     fetchTransactions();
@@ -35,7 +36,17 @@ const TransactionHistory = () => {
     try {
       setLoading(true);
       const res = await getMyTransactions({ status: statusFilter || undefined });
-      setPayments(res.data.payments);
+      
+      let fetchedPayments = res.data.payments || [];
+
+      // Strictly filter out held/escrow/refunded funds for freelancers
+      if (isFreelancer) {
+        fetchedPayments = fetchedPayments.filter(p => 
+          p.status === "released" || p.status === "paid_out"
+        );
+      }
+
+      setPayments(fetchedPayments);
     } catch (err) {
       console.log(err);
     } finally {
@@ -56,7 +67,9 @@ const TransactionHistory = () => {
               <h1 className="text-2xl font-bold text-slate-900">Transaction History</h1>
             </div>
             <p className="text-sm font-medium text-slate-500 mt-2">
-              Track your payments, escrow holds, and completed payouts.
+              {isFreelancer 
+                ? "Track your released payments and completed payouts."
+                : "Track your payments, escrow holds, and completed payouts."}
             </p>
           </div>
 
@@ -71,10 +84,10 @@ const TransactionHistory = () => {
               className="appearance-none w-full sm:w-48 pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer shadow-sm transition-all"
             >
               <option value="">All Transactions</option>
-              <option value="held">In Escrow (Held)</option>
+              {!isFreelancer && <option value="held">In Escrow (Held)</option>}
               <option value="released">Released</option>
               <option value="paid_out">Paid Out</option>
-              <option value="refunded">Refunded</option>
+              {!isFreelancer && <option value="refunded">Refunded</option>}
             </select>
             {/* Custom dropdown arrow */}
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -101,7 +114,9 @@ const TransactionHistory = () => {
               <p className="text-sm text-slate-500 mt-1 max-w-sm">
                 {statusFilter 
                   ? `You don't have any transactions with the status "${statusFilter.replace('_', ' ')}".` 
-                  : "When you fund milestones or receive payments, they will appear here."}
+                  : isFreelancer 
+                    ? "When a client releases a milestone payment to you, it will appear here." 
+                    : "When you fund milestones or receive payments, they will appear here."}
               </p>
             </div>
           ) : (
