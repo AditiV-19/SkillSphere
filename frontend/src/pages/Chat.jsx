@@ -8,7 +8,13 @@ import {
 import { useLocation } from "react-router-dom";
 import socket from "../services/socket";
 import Sidebar from "../components/Sidebar";
-import { FaPaperclip, FaChevronLeft, FaVideo } from "react-icons/fa";
+import { 
+  FaPaperclip, 
+  FaChevronLeft, 
+  FaVideo, 
+  FaCheck, 
+  FaCheckDouble 
+} from "react-icons/fa";
 import { useVideoCall } from "../../hooks/useVideoCall";
 import VideoCallModal from "../components/VideoCallModal";
 
@@ -128,7 +134,12 @@ export default function Chat() {
       try {
         const res = await getMessages(selectedConversation._id);
         setMessages(res.data.messages);
+        
         await markMessagesAsRead(selectedConversation._id);
+        socket.emit("markAsRead", { 
+          conversationId: selectedConversation._id, 
+          readerId: currentUser.id 
+        });
 
         setConversations((prev) =>
           prev.map((conv) =>
@@ -143,7 +154,7 @@ export default function Chat() {
     };
 
     fetchMessages();
-  }, [selectedConversation]);
+  }, [selectedConversation, currentUser.id]);
 
   useEffect(() => {
     if (!selectedConversation) return;
@@ -165,6 +176,11 @@ export default function Chat() {
         setMessages((prev) => [...prev, message]);
         try {
           await markMessagesAsRead(conversationId);
+          // Instantly notify sender that you read their new live message
+          socket.emit("markAsRead", { 
+            conversationId, 
+            readerId: currentUser.id 
+          });
         } catch (err) {
           console.error("Failed to mark message as read:", err);
         }
@@ -177,12 +193,27 @@ export default function Chat() {
       );
     };
 
+   const handleMessagesRead = ({ conversationId }) => {
+  if (conversationId === activeConversationIdRef.current) {
+    setMessages((prev) =>
+      prev.map((msg) => {
+        const senderId = msg.sender._id || msg.sender;
+        return senderId === currentUser.id
+          ? { ...msg, isRead: true } 
+          : msg;
+      })
+    );
+  }
+};
+
     socket.on("receiveMessage", handleReceiveMessage);
+    socket.on("messagesRead", handleMessagesRead);
 
     return () => {
       socket.off("receiveMessage", handleReceiveMessage);
+      socket.off("messagesRead", handleMessagesRead);
     };
-  }, []);
+  }, [currentUser.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -228,7 +259,7 @@ export default function Chat() {
 
         {/* ============================
           LEFT SIDEBAR (CONVERSATIONS)
-      ============================ */}
+        ============================ */}
         <div
           className={`${selectedConversation ? "hidden md:flex" : "flex"} w-full md:w-80 lg:w-96 flex-col border-r border-slate-200 bg-slate-50 h-full shrink-0 transition-all`}
         >
@@ -288,7 +319,7 @@ export default function Chat() {
 
         {/* ============================
           RIGHT CHAT WINDOW
-      ============================ */}
+        ============================ */}
         <div
           className={`${!selectedConversation ? "hidden md:flex" : "flex"} flex-col flex-1 bg-white h-full relative`}
         >
@@ -401,19 +432,33 @@ export default function Chat() {
                             <p className="leading-relaxed">{message.text}</p>
                           )}
 
-                          <span
-                            className={`text-[10px] mt-2 text-right font-medium ${
+                          {/* Time and Read Receipts Wrapper */}
+                          <div
+                            className={`flex items-center justify-end gap-1.5 mt-2 text-[10px] font-medium ${
                               ownMessage ? "text-blue-200" : "text-slate-400"
                             }`}
                           >
-                            {new Date(message.createdAt).toLocaleTimeString(
-                              [],
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
+                            <span>
+                              {new Date(message.createdAt).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </span>
+                            
+                            {/* Read Receipt Ticks for Sent Messages */}
+                            {ownMessage && (
+                              <span className="ml-0.5">
+                                {message.isRead ? (
+                                  <FaCheckDouble className="text-white" size={11} />
+                                ) : (
+                                  <FaCheck className="text-blue-300" size={10} />
+                                )}
+                              </span>
                             )}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     );

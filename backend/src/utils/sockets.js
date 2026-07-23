@@ -90,6 +90,19 @@ export const initializeSocket = (server) => {
     });
 
     /**
+     * Reader has viewed messages in a conversation — tell the sender
+     * so their bubble can flip to double-tick without a refresh.
+     */
+    socket.on("markAsRead", ({ conversationId, readerId }) => {
+      if (!conversationId) return;
+      // Broadcast to everyone else in the room (the sender)
+      socket.to(conversationId).emit("messagesRead", {
+        conversationId,
+        readerId,
+      });
+    });
+
+    /**
      * ---------- VIDEO CALL SIGNALING (Module 6) ----------
      * WebRTC needs a signaling channel to exchange SDP offers/answers
      * and ICE candidates. Media itself flows peer-to-peer, not through
@@ -97,35 +110,38 @@ export const initializeSocket = (server) => {
      */
 
     // Caller starts a call
-    socket.on("call:initiate", async ({ toUserId, fromUser, conversationId, offer }) => {
-      const targetSocketId = getUserSocket(toUserId?.toString());
+    socket.on(
+      "call:initiate",
+      async ({ toUserId, fromUser, conversationId, offer }) => {
+        const targetSocketId = getUserSocket(toUserId?.toString());
 
-      if (!targetSocketId) {
-        socket.emit("call:unavailable", { toUserId });
-        return;
-      }
+        if (!targetSocketId) {
+          socket.emit("call:unavailable", { toUserId });
+          return;
+        }
 
-      io.to(targetSocketId).emit("call:incoming", {
-        fromUser,
-        conversationId,
-        offer,
-      });
-
-      // Reuse existing notification pipeline for missed-call visibility
-      try {
-        await sendNotification({
-          recipient: toUserId,
-          sender: fromUser?._id,
-          type: "CALL",
-          title: "Incoming Video Call",
-          message: `${fromUser?.username} is calling you.`,
-          link: `/chats/${conversationId}`,
-          sendEmail: false,
+        io.to(targetSocketId).emit("call:incoming", {
+          fromUser,
+          conversationId,
+          offer,
         });
-      } catch (err) {
-        console.error("Call notification failed:", err);
-      }
-    });
+
+        // Reuse existing notification pipeline for missed-call visibility
+        try {
+          await sendNotification({
+            recipient: toUserId,
+            sender: fromUser?._id,
+            type: "CALL",
+            title: "Incoming Video Call",
+            message: `${fromUser?.username} is calling you.`,
+            link: `/chats/${conversationId}`,
+            sendEmail: false,
+          });
+        } catch (err) {
+          console.error("Call notification failed:", err);
+        }
+      },
+    );
 
     // Callee sends back an answer
     socket.on("call:answer", ({ toUserId, answer }) => {
