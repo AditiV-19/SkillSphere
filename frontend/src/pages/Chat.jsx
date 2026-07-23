@@ -266,7 +266,7 @@ export default function Chat() {
                       <h3
                         className={`font-bold ${selectedConversation?._id === conversation._id ? "text-black-900" : "text-slate-700"}`}
                       >
-                        {otherUser?.name || "Verified User"}
+                        {otherUser?.username || "User"}
                       </h3>
                       {conversation.unreadCount > 0 && (
                         <div className="bg-blue-600 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
@@ -322,13 +322,13 @@ export default function Chat() {
                   <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-lg border border-blue-200">
                     {selectedConversation.participants
                       .find((u) => u._id !== currentUser.id)
-                      ?.name?.charAt(0) || "U"}
+                      ?.username?.charAt(0) || "U"}
                   </div>
                   <div>
                     <h2 className="font-bold text-lg text-slate-800 leading-tight">
                       {selectedConversation.participants.find(
                         (user) => user._id !== currentUser.id,
-                      )?.name || "Chat"}
+                      )?.username || "Chat"}
                     </h2>
                     <p className="text-xs text-blue-600 font-medium tracking-wide uppercase">
                       Active Contract

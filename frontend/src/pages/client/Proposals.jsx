@@ -15,6 +15,7 @@ import {
   MessageSquare,
   ArrowRight,
   FolderOpen,
+  Info,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -238,26 +239,42 @@ export default function Proposals() {
                   key={proposal._id}
                   className="border border-slate-200 p-5 rounded-2xl bg-slate-50/40 space-y-4"
                 >
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">
-                        {proposal.freelancerUser
-                          ? `${proposal.freelancerUser.username}`
-                          : "Independent Freelancer"}
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        {proposal.freelancerUser?.email}
-                      </p>
+                  <div className="flex justify-between items-start border-b border-slate-100 pb-4 mb-2">
+                    {/* Left: Freelancer Details & Action */}
+                    <div className="flex items-center gap-3.5">
+                      
+                      <div className="flex flex-col justify-center">
+                        <h4 className="font-bold text-slate-800 text-sm leading-tight">
+                          {proposal.freelancerUser
+                            ? proposal.freelancerUser.username
+                            : "Independent Freelancer"}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5 mb-1.5 leading-tight">
+                          {proposal.freelancerUser?.email || "No email provided"}
+                        </p>
+                        <div>
+                          <button 
+                            className="text-[10px] font-bold text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-colors inline-flex items-center gap-1 underline underline-offset-2"
+                            onClick={() => navigate(`/client/freelancer/${proposal.freelancerUser._id}`)}
+
+                          >
+                            <Info size={10} strokeWidth={2.5} />
+                            View Profile
+                          </button>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Right: Status Badge */}
                     <span
-                      className={`text-[9px] font-extrabold px-2 py-0.5 rounded uppercase border tracking-wide ${
+                      className={`text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase border tracking-wide shrink-0 ${
                         proposal.status === "accepted"
                           ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                           : proposal.status === "negotiating"
                             ? "bg-amber-50 text-amber-700 border-amber-100"
                             : proposal.status === "rejected"
                               ? "bg-rose-50 text-rose-700 border-rose-100"
-                              : "bg-white text-slate-500 border-slate-200"
+                              : "bg-slate-50 text-slate-500 border-slate-200"
                       }`}
                     >
                       {proposal.status}
