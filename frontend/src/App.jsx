@@ -18,7 +18,7 @@ import ViewFreelancerProfile from "./pages/client/ViewFreelancerProfile";
 import Invitations from "./pages/freelancer/Invitations";
 import GigDetails from "./pages/freelancer/GigDetails";
 import FreelancerGigApplications from "./pages/freelancer/FreelancerGigApplications";
-import ClientGigApplications from "./pages/client/ClientGigApplications";
+import Proposals from "./pages/client/Proposals";
 import AssignedGigs from "./pages/freelancer/AssignedGigs";
 import GigProgress from "./pages/client/GigProgress";
 import GigWorkTracker from "./pages/freelancer/GigWorkTracker";
@@ -184,7 +184,7 @@ export default function App() {
         path="/client/gig/applications"
         element={
           <ProtectedRoute allowedRoles={["client"]}>
-            <ClientGigApplications />
+            <Proposals />
           </ProtectedRoute>
         }
       />

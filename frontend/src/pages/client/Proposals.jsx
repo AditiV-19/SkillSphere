@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   getCompanyApplicationsDeck,
+  startConversation,
   updateProposalStatus,
 } from "../../services/api";
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
@@ -15,13 +16,14 @@ import {
   ArrowRight,
   FolderOpen,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export default function ClientGigApplications() {
+export default function Proposals() {
   const [gigDeck, setGigDeck] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-
+  const navigate = useNavigate()
   // Drawer / Overlay Detail States
   const [selectedGig, setSelectedGig] = useState(null);
 
@@ -29,7 +31,6 @@ export default function ClientGigApplications() {
     fetchCompanyDataDeck();
   }, []);
 
-  // ✅ UPGRADE: Added "isSilent" parameter. 
   // If true, it refreshes data in the background without showing the loading screen!
   const fetchCompanyDataDeck = async (isSilent = false) => {
     try {
@@ -60,7 +61,6 @@ export default function ClientGigApplications() {
   };
 
   const handleStatusChange = async (proposalId, newStatus) => {
-    // ✅ UPGRADE 1: Customized Confirmation Alerts
     let confirmMessage = "";
     if (newStatus === "accepted") {
       confirmMessage = "Are you sure you want to ACCEPT this proposal? This will finalize the contract.";
@@ -96,6 +96,23 @@ export default function ClientGigApplications() {
       setIsUpdating(false);
     }
   };
+
+    const handleMessage = async (receiverId) => {
+    try {
+
+        const res = await startConversation(receiverId);
+
+        navigate("/chats", {
+            state: {
+                conversation: res.data.conversation,
+            },
+        });
+
+    } catch (err) {
+        console.log(err);
+    }
+};
+
 
   if (loading)
     return (
@@ -288,6 +305,12 @@ export default function ClientGigApplications() {
                           className="flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition disabled:opacity-50"
                         >
                           <Check size={12} /> Accept
+                        </button>
+                        <button
+                          onClick={() => handleMessage(proposal.freelancerUser._id)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                        >
+                          Message
                         </button>
                       </>
                     ) : (
