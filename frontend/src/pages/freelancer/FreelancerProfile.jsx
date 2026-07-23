@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { getProfile, getReviewAnalytics, updateProfile, handleIdUpload } from "../../services/api.js";
+import {
+  getProfile,
+  getReviewAnalytics,
+  updateProfile,
+  handleIdUpload,
+} from "../../services/api.js";
 
 import DashboardLayout from "../../components/dashboard/DashboardLayout.jsx";
 import ProfileHeader from "../../components/profile/ProfileHeader";
@@ -25,6 +30,7 @@ import {
   Camera,
   Save,
   ShieldCheck,
+  IndianRupee,
 } from "lucide-react";
 import ReviewAnalytics from "../../components/ReviewAnalytics.jsx";
 import FreelancerScheduleManager from "./FreelancerScheduleManager.jsx";
@@ -79,9 +85,9 @@ export default function FreelancerProfile() {
     setUploadingId(true);
     try {
       const response = await handleIdUpload(file);
-      
+
       if (response.success) {
-        await fetchProfile(); 
+        await fetchProfile();
       }
     } catch (error) {
       console.error("Failed to upload ID:", error);
@@ -100,7 +106,8 @@ export default function FreelancerProfile() {
   const isFullyVerified = !!profile.isVerified;
   // Extract the URL safely, whether the backend sends a string or an object
   const resumeData = profile.portfolio?.resume;
-  const resumeUrl = typeof resumeData === 'string' ? resumeData : resumeData?.url;
+  const resumeUrl =
+    typeof resumeData === "string" ? resumeData : resumeData?.url;
 
   return (
     <>
@@ -240,15 +247,14 @@ export default function FreelancerProfile() {
               )}
             </SectionCard>
 
-          <FreelancerScheduleManager />
-
+            <FreelancerScheduleManager />
           </div>
 
           {/* right column */}
           <div className="space-y-6">
             <SectionCard icon={ShieldCheck} title="Verification">
-              <VerificationBadgeList 
-                verification={profile.verification} 
+              <VerificationBadgeList
+                verification={profile.verification}
                 onUploadId={handleUploadIdDocument}
                 uploadingId={uploadingId}
               />
@@ -291,6 +297,53 @@ export default function FreelancerProfile() {
               )}
             </SectionCard>
 
+            <SectionCard icon={IndianRupee} title="Pricing Preferences">
+              <div className="flex flex-col gap-3">
+                {/* Hourly Rate Display */}
+                <div className="flex justify-between items-center bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                  <span className="text-sm font-medium text-slate-600">
+                    Hourly Rate
+                  </span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {profile.hourlyRate
+                      ? `₹${profile.hourlyRate} / hr`
+                      : "Negotiable"}
+                  </span>
+                </div>
+
+                {/* Milestone / Fixed Pricing Display */}
+                <div className="flex justify-between items-center bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                  <span className="text-sm font-medium text-slate-600">
+                    Accepts Milestones
+                  </span>
+                  <span
+                    className={`text-sm font-bold px-2.5 py-1 rounded-full ${
+                      profile.milestonePricing?.acceptsMilestones === false
+                        ? "bg-rose-100 text-rose-700"
+                        : "bg-emerald-100 text-emerald-700"
+                    }`}
+                  >
+                    {profile.milestonePricing?.acceptsMilestones === false
+                      ? "No"
+                      : "Yes"}
+                  </span>
+                </div>
+
+                {/* Minimum Budget Display */}
+                {profile.milestonePricing?.acceptsMilestones !== false &&
+                  profile.milestonePricing?.minProjectBudget > 0 && (
+                    <div className="flex justify-between items-center bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                      <span className="text-sm font-medium text-slate-600">
+                        Minimum Fixed Budget
+                      </span>
+                      <span className="text-sm font-bold text-slate-900">
+                        ₹{profile.milestonePricing.minProjectBudget}
+                      </span>
+                    </div>
+                  )}
+              </div>
+            </SectionCard>
+
             <SectionCard title="Portfolio">
               <div className="space-y-2">
                 {profile.portfolio?.github && (
@@ -330,7 +383,10 @@ export default function FreelancerProfile() {
                     rel="noreferrer"
                     className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-700"
                   >
-                    <FileText className="w-4 h-4" /> {typeof resumeData === 'object' && resumeData.fileName ? resumeData.fileName : "Resume"}
+                    <FileText className="w-4 h-4" />{" "}
+                    {typeof resumeData === "object" && resumeData.fileName
+                      ? resumeData.fileName
+                      : "Resume"}
                   </a>
                 )}
                 {!profile.portfolio?.github &&
@@ -343,13 +399,9 @@ export default function FreelancerProfile() {
                   )}
               </div>
             </SectionCard>
-
-            
           </div>
         </div>
-        <ReviewAnalytics 
-          analytics={analytics}
-        />
+        <ReviewAnalytics analytics={analytics} />
       </div>
 
       {isEditing && (

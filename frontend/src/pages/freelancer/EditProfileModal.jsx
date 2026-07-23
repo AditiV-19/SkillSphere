@@ -280,7 +280,6 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const fileInputRef = useRef(null);
 
-  // ADDED: index parameter to identify which certification is being updated
   const handleFileChange = async (e, type, index = null) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -297,7 +296,6 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
       }
     } else if (type === "certificate") {
       try {
-        // Reusing uploadResumeToServer for uploading the certificate document
         const response = await uploadResumeToServer(file);
         updateCertification(index, "certificateUrl", response.data.url);
       } catch (error) {
@@ -488,6 +486,50 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
                   <option value="unavailable">Unavailable</option>
                 </select>
               </Field>
+
+              {/* === PRICING PREFERENCES SECTION === */}
+              <div className="pt-4 border-t border-slate-200 bg-slate-50/50 -mx-6 px-6 py-4">
+                <h2 className="text-sm font-bold text-slate-900 mb-4">Pricing Preferences</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <Field label="Hourly Rate (₹)">
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.hourlyRate || ""}
+                      onChange={(e) => update("hourlyRate", parseFloat(e.target.value) || 0)}
+                      className={inputClass}
+                      placeholder="e.g., 25"
+                    />
+                  </Field>
+                  
+                  <div className="flex flex-col justify-center pt-5">
+                    <label className="flex items-center gap-2.5 text-sm text-slate-700 font-medium cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.milestonePricing?.acceptsMilestones ?? true}
+                        onChange={(e) => update("milestonePricing", { ...form.milestonePricing, acceptsMilestones: e.target.checked })}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                      />
+                      Accepts Milestone / Fixed Pricing
+                    </label>
+                  </div>
+                </div>
+
+                {form.milestonePricing?.acceptsMilestones !== false && (
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <Field label="Minimum Fixed Budget (₹)">
+                      <input
+                        type="number"
+                        min="0"
+                        value={form.milestonePricing?.minProjectBudget || ""}
+                        onChange={(e) => update("milestonePricing", { ...form.milestonePricing, minProjectBudget: parseFloat(e.target.value) || 0 })}
+                        className={inputClass}
+                        placeholder="e.g., 100"
+                      />
+                    </Field>
+                  </div>
+                )}
+              </div>
 
               {/* SLOTS MANAGEMENT UI */}
               <div className="pt-4 border-t border-slate-200">

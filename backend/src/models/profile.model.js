@@ -67,6 +67,16 @@ const freelancerSchema = new Schema(
       default: 0,
       min: 0,
     },
+    milestonePricing: {
+      acceptsMilestones: {
+        type: Boolean,
+        default: true, 
+      },
+      minProjectBudget: {
+        type: Number,
+        default: 0, 
+      }
+    },
 
     availability: {
       status: {
