@@ -18,6 +18,7 @@ export const useVideoCall = (socket, currentUser) => {
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const otherUserIdRef = useRef(null);
+  const localStreamRef = useRef(null);
 
   // ADD near the other useState declarations
   const [isMuted, setIsMuted] = useState(false);
@@ -70,13 +71,14 @@ export const useVideoCall = (socket, currentUser) => {
   );
 
   const getLocalStream = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-    setLocalStream(stream);
-    return stream;
-  };
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true,
+  });
+  localStreamRef.current = stream;   
+  setLocalStream(stream);
+  return stream;
+};
 
   // NEW: attach local stream to <video> whenever either becomes available
   useEffect(() => {
@@ -160,24 +162,24 @@ export const useVideoCall = (socket, currentUser) => {
   };
 
   const endCall = useCallback(() => {
-    if (otherUserIdRef.current) {
-      socket.emit("call:end", { toUserId: otherUserIdRef.current });
-    }
-    peerConnectionRef.current?.close();
-    peerConnectionRef.current = null;
+  if (otherUserIdRef.current) {
+    socket.emit("call:end", { toUserId: otherUserIdRef.current });
+  }
+  peerConnectionRef.current?.close();
+  peerConnectionRef.current = null;
 
-    localStream?.getTracks().forEach((t) => t.stop());
-    setLocalStream(null);
-    setRemoteStream(null);
+  localStreamRef.current?.getTracks().forEach((t) => t.stop());
+  localStreamRef.current = null;
+  setLocalStream(null);
+  setRemoteStream(null);
 
-    // ADD these two lines
-    setIsMuted(false);
-    setIsVideoOff(false);
+  setIsMuted(false);
+  setIsVideoOff(false);
 
-    otherUserIdRef.current = null;
-    setRemoteUser(null);
-    setCallStatus("idle");
-  }, [socket, localStream]);
+  otherUserIdRef.current = null;
+  setRemoteUser(null);
+  setCallStatus("idle");
+}, [socket]); 
 
   useEffect(() => {
     if (!socket) return;
